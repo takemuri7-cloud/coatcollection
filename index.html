@@ -1,0 +1,2943 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE COAT ARCHIVE</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<style>
+/* ═══════════════════════════════════════════════
+   VARIABLES & RESET
+═══════════════════════════════════════════════ */
+:root {
+  --bg:          #f5f0e8;
+  --surface:     #faf7f2;
+  --surface2:    #ede8df;
+  --surface3:    #e4ddd2;
+  --border:      #d8d0c4;
+  --border2:     #c8bfb0;
+  --text:        #2a2218;
+  --text-dim:    #6a5c48;
+  --text-muted:  #a0907c;
+  --accent:      #8b4a2a;
+  --accent2:     #b06840;
+  --accent-faint:#f0e4d8;
+  --gold:        #b08030;
+  --blue:        #3a5898;
+  --blue-bg:     #eaeefc;
+  --red:         #b03030;
+  --red-bg:      #fceaea;
+  --red-border:  #e0a0a0;
+  --green:       #2a7a48;
+  --green-bg:    #eaf4ee;
+  --green-border:#90c8a8;
+  --disposed-bg: #f8f0ee;
+  --serif:  'Noto Sans JP', sans-serif;
+  --mono:   'DM Mono', 'Noto Sans JP', sans-serif;
+  --r:      6px;
+  --ease:   cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html { font-size:14px; -webkit-text-size-adjust:100%; }
+body { background:var(--bg); color:var(--text); font-family:var(--mono); line-height:1.55; overflow-x:hidden; min-height:100dvh; }
+button { font-family:var(--mono); cursor:pointer; }
+input,select,textarea { font-family:var(--mono); }
+a { color:inherit; }
+img { display:block; }
+
+/* ═══════════════════════════════════════════════
+   LAYOUT SKELETON
+═══════════════════════════════════════════════ */
+#app-header {
+  position:sticky; top:0; z-index:200;
+  height:52px; background:var(--bg); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; padding:0 14px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
+}
+.logo { font-family:var(--serif); font-size:17px; font-weight:500; letter-spacing:.18em; }
+.logo em { color:var(--accent); font-style:italic; }
+.hdr-right { display:flex; gap:6px; }
+
+#app-nav {
+  position:sticky; top:52px; z-index:190;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; box-shadow:0 1px 3px rgba(0,0,0,.05);
+}
+.nav-btn {
+  flex:1; padding:11px 2px; background:transparent; border:none;
+  color:var(--text-muted); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+  position:relative; transition:color .2s var(--ease); white-space:nowrap;
+}
+.nav-btn::after {
+  content:''; position:absolute; bottom:0; left:18%; right:18%;
+  height:1px; background:var(--accent);
+  transform:scaleX(0); transition:transform .2s var(--ease);
+}
+.nav-btn.active { color:var(--accent); }
+.nav-btn.active::after { transform:scaleX(1); }
+.nav-badge {
+  display:inline-block; background:var(--blue); color:#fff;
+  font-size:7.5px; padding:1px 4px; border-radius:8px; margin-left:3px; vertical-align:middle;
+}
+
+/* VIEWS */
+.view { display:none; }
+.view.active { display:block; animation:fadeUp .22s var(--ease); }
+@keyframes fadeUp { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+
+/* ICON BUTTON */
+.icon-btn {
+  width:34px; height:34px; background:var(--surface); border:1px solid var(--border2);
+  color:var(--text-dim); border-radius:var(--r); display:flex; align-items:center;
+  justify-content:center; font-size:15px; transition:all .18s var(--ease);
+}
+.icon-btn:active, .icon-btn.on { background:var(--accent-faint); color:var(--accent); border-color:var(--accent2); }
+
+/* BUTTONS */
+.btn {
+  flex:1; padding:12px 8px; border-radius:var(--r); font-size:11px;
+  letter-spacing:.08em; text-transform:uppercase; border:none; transition:all .18s var(--ease);
+}
+.btn-ghost  { background:transparent; border:1px solid var(--border2); color:var(--text-dim); }
+.btn-ghost:active  { background:var(--surface2); color:var(--text); }
+.btn-primary { background:var(--accent); color:#fff; font-weight:500; }
+.btn-primary:active { background:var(--accent2); }
+.btn-blue   { background:var(--blue); color:#fff; font-weight:500; }
+.btn-blue:active { opacity:.85; }
+.btn-red    { background:transparent; border:1px solid var(--red-border); color:var(--red); }
+.btn-red:active { background:var(--red-bg); }
+
+/* TOAST */
+#toast {
+  position:fixed; top:110px; left:12px; right:12px; z-index:900;
+  background:var(--surface); border:1px solid var(--border2); color:var(--text);
+  padding:11px 14px; border-radius:var(--r); font-size:12px;
+  opacity:0; transform:translateY(-6px); pointer-events:none;
+  transition:opacity .25s, transform .25s;
+  box-shadow:0 4px 16px rgba(0,0,0,.12);
+}
+#toast.show { opacity:1; transform:none; }
+#toast.ok   { border-color:var(--green-border); color:var(--green); }
+#toast.err  { border-color:var(--red-border);   color:var(--red); }
+#toast.info { border-color:var(--accent2); color:var(--accent); }
+
+/* MODAL BOTTOM SHEET */
+.modal-bg {
+  position:fixed; inset:0; background:rgba(80,60,40,.45); z-index:500;
+  display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none; transition:opacity .25s var(--ease);
+}
+.modal-bg.open { opacity:1; pointer-events:all; }
+.modal-sheet {
+  width:100%; background:var(--surface); border-top:1px solid var(--border);
+  border-radius:14px 14px 0 0; padding-bottom:env(safe-area-inset-bottom,20px);
+  transform:translateY(100%); transition:transform .32s var(--ease);
+  max-height:88dvh; overflow-y:auto;
+  box-shadow:0 -4px 24px rgba(0,0,0,.12);
+}
+.modal-bg.open .modal-sheet { transform:none; }
+.modal-handle { width:38px; height:4px; background:var(--border2); border-radius:2px; margin:12px auto 14px; }
+.modal-title { font-family:var(--serif); font-size:17px; font-weight:500; padding:0 18px 13px; border-bottom:1px solid var(--border); color:var(--text); }
+.modal-body  { padding:16px 18px; }
+.modal-actions { display:flex; gap:8px; padding:14px 18px 0; }
+
+/* FAB */
+.fab {
+  position:fixed; bottom:22px; right:16px; z-index:150;
+  width:50px; height:50px; border-radius:50%; border:none;
+  background:var(--accent); color:#fff; font-size:22px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 20px rgba(139,74,42,.4); transition:all .18s var(--ease);
+}
+.fab:active { transform:scale(.91); }
+.fab-sub {
+  position:fixed; bottom:82px; right:18px; z-index:150;
+  width:42px; height:42px; border-radius:50%; border:none;
+  background:var(--blue); color:#fff; font-size:17px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 3px 14px rgba(58,88,152,.35); transition:all .18s var(--ease);
+}
+.fab-sub:active { transform:scale(.91); }
+
+/* FIXED BOTTOM BAR */
+.fixed-bar {
+  position:fixed; bottom:0; left:0; right:0; z-index:160;
+  background:var(--surface); border-top:1px solid var(--border);
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
+  display:flex; gap:8px;
+  box-shadow:0 -2px 10px rgba(0,0,0,.06);
+}
+
+/* ═══════════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════════ */
+.form-wrap { padding-bottom:80px; }
+.f-section { padding:18px 14px; border-bottom:1px solid var(--border); background:var(--surface); }
+.f-section-title {
+  font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent2);
+  margin-bottom:14px; display:flex; align-items:center; gap:10px;
+}
+.f-section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.field { margin-bottom:12px; }
+.field:last-child { margin-bottom:0; }
+.field-lbl {
+  display:block; font-size:9.5px; letter-spacing:.08em; color:var(--text-muted);
+  text-transform:uppercase; margin-bottom:5px;
+}
+.field-inp, .field-sel, .field-ta {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  color:var(--text); padding:9px 11px; font-size:13px; border-radius:var(--r);
+  outline:none; transition:border-color .18s var(--ease); appearance:none;
+}
+.field-inp:focus, .field-sel:focus, .field-ta:focus {
+  border-color:var(--accent2); background:var(--surface);
+}
+.field-ta { resize:vertical; min-height:88px; line-height:1.65; }
+.field-sel {
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a0907c'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 11px center; padding-right:30px;
+}
+.field-sel option { background:var(--surface); color:var(--text); }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* Stars */
+.stars-row { display:flex; gap:8px; padding:4px 0; }
+.star-btn { font-size:24px; background:none; border:none; color:var(--border2); padding:2px; transition:color .15s,transform .15s; }
+.star-btn.lit { color:var(--gold); }
+.star-btn:active { transform:scale(1.25); }
+
+/* Tag pills */
+.pill-group { display:flex; flex-wrap:wrap; gap:6px; }
+.pill-btn {
+  padding:5px 12px; background:var(--bg); border:1px solid var(--border2);
+  color:var(--text-dim); font-size:11px; border-radius:20px; transition:all .15s var(--ease);
+}
+.pill-btn.on { background:var(--accent-faint); border-color:var(--accent2); color:var(--accent); }
+
+/* Type toggle */
+.type-row { display:flex; border:1px solid var(--border2); border-radius:var(--r); overflow:hidden; margin-bottom:14px; }
+.type-btn { flex:1; padding:10px; background:var(--bg); border:none; color:var(--text-muted); font-size:11px; letter-spacing:.06em; transition:all .18s; }
+.type-btn.on-coat { background:var(--accent); color:#fff; }
+.type-btn.on-wish { background:var(--blue); color:#fff; }
+
+/* Toggle switch */
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; }
+.toggle-lbl { font-size:12px; color:var(--text-dim); }
+.toggle-sw {
+  width:44px; height:24px; background:var(--border2); border-radius:12px;
+  position:relative; cursor:pointer; transition:background .2s;
+}
+.toggle-sw.on { background:var(--accent); }
+.toggle-sw::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:18px; height:18px; background:#fff; border-radius:50%;
+  transition:transform .2s var(--ease);
+}
+.toggle-sw.on::after { transform:translateX(20px); }
+.disp-body { display:none; }
+.disp-body.open { display:block; }
+
+/* Photo grid */
+.photo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.photo-slot {
+  aspect-ratio:3/4; background:var(--bg); border:1px dashed var(--border2);
+  border-radius:var(--r); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; overflow:hidden; position:relative; transition:border-color .15s;
+}
+.photo-slot:active { border-color:var(--accent2); }
+.photo-slot img { width:100%; height:100%; object-fit:cover; }
+.photo-slot .add-ic { font-size:20px; color:var(--border2); }
+.photo-del {
+  position:absolute; top:4px; right:4px; width:20px; height:20px;
+  background:rgba(245,240,232,.92); border:1px solid var(--border2); border-radius:50%;
+  color:var(--text-dim); font-size:11px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; z-index:2;
+}
+.photo-hint { font-size:10px; color:var(--text-muted); margin-bottom:7px; }
+#fi-coat { display:none; }
+#fi-disp { display:none; }
+
+/* Map row */
+.map-row { display:flex; gap:7px; }
+.map-row .field-inp { flex:1; }
+.map-hint {
+  margin-top:7px; padding:9px 11px; background:var(--accent-faint); border:1px solid var(--border);
+  border-radius:var(--r); font-size:11px; color:var(--accent); word-break:break-all; display:none; cursor:pointer;
+}
+.map-hint.show { display:block; }
+
+/* ═══════════════════════════════════════════════
+   COLLECTION VIEW
+═══════════════════════════════════════════════ */
+.search-bar {
+  padding:10px 12px; display:flex; gap:7px; align-items:center;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  position:sticky; top:102px; z-index:100;
+}
+.search-inp {
+  flex:1; background:var(--bg); border:1px solid var(--border2);
+  color:var(--text); padding:8px 11px; font-size:12px; border-radius:var(--r);
+  outline:none; transition:border-color .18s;
+}
+.search-inp:focus { border-color:var(--accent2); }
+.search-inp::placeholder { color:var(--text-muted); }
+.sort-pill {
+  height:34px; padding:0 10px; background:var(--bg); border:1px solid var(--border2);
+  color:var(--text-dim); font-size:10px; border-radius:var(--r);
+  display:flex; align-items:center; gap:4px; white-space:nowrap; transition:all .18s;
+}
+.sort-pill.on { border-color:var(--accent2); color:var(--accent); }
+
+.sort-panel {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  flex-wrap:wrap; gap:6px; padding:10px 12px; display:none;
+}
+.sort-panel.open { display:flex; }
+.sort-chip {
+  padding:5px 12px; background:var(--bg); border:1px solid var(--border2);
+  color:var(--text-muted); border-radius:20px; font-size:10px; font-family:var(--mono);
+  transition:all .15s; white-space:nowrap;
+}
+.sort-chip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+.filter-bar {
+  padding:8px 12px; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none;
+  border-bottom:1px solid var(--border); display:none; background:var(--surface);
+}
+.filter-bar.open { display:flex; }
+.filter-bar::-webkit-scrollbar { display:none; }
+.fchip {
+  white-space:nowrap; padding:4px 10px; background:var(--bg);
+  border:1px solid var(--border2); color:var(--text-muted); border-radius:20px;
+  font-size:10px; font-family:var(--mono); transition:all .15s;
+}
+.fchip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+.stats-row {
+  padding:10px 12px; display:flex; gap:14px; border-bottom:1px solid var(--border);
+  overflow-x:auto; scrollbar-width:none; background:var(--surface);
+}
+.stats-row::-webkit-scrollbar { display:none; }
+.stat { flex-shrink:0; text-align:center; }
+.stat-n { font-family:var(--serif); font-size:20px; font-weight:300; color:var(--accent); display:block; line-height:1; }
+.stat-l { font-size:8px; letter-spacing:.1em; color:var(--text-muted); text-transform:uppercase; }
+
+/* Card list */
+.card-list { padding-bottom:80px; }
+
+.coat-card {
+  display:flex; align-items:stretch;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  cursor:pointer; transition:background .15s; user-select:none;
+  position:relative; border-left:3px solid var(--green-border);
+}
+.coat-card:active { background:var(--surface2); }
+.coat-card.is-disposed {
+  background:var(--disposed-bg);
+  border-left-color:var(--red-border);
+}
+.coat-card.is-wish { background:var(--blue-bg); border-left-color:var(--blue); opacity:.85; }
+.coat-card.drag-ghost { opacity:.4; }
+.coat-card.drag-over::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent);
+}
+
+.drag-handle {
+  width:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  color:var(--border2); font-size:13px; touch-action:none; cursor:grab;
+}
+.card-thumb {
+  width:62px; flex-shrink:0; background:var(--surface2); overflow:hidden;
+  display:flex; align-items:center; justify-content:center; font-size:22px;
+}
+.coat-card.is-wish .card-thumb { opacity:.55; }
+.card-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.card-thumb .thumb-ph { opacity:.35; }
+.card-body { flex:1; min-width:0; padding:10px 9px 10px 8px; }
+.card-l1 { font-size:9px; letter-spacing:.12em; color:var(--accent); text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:1px; }
+.coat-card.is-wish .card-l1 { color:var(--blue); }
+.card-l2 { font-family:var(--serif); font-size:15px; font-weight:400; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; margin-bottom:2px; }
+.card-l3 { font-size:10px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-right { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; padding:10px 11px 10px 5px; gap:5px; }
+.card-stars { font-size:9px; color:var(--gold); letter-spacing:1px; }
+.card-tag { font-size:8px; letter-spacing:.07em; padding:2px 6px; border:1px solid var(--border2); color:var(--text-muted); }
+.card-tag.disp { border-color:var(--red-border); color:var(--red); background:var(--red-bg); }
+.card-tag.wish { border-color:var(--blue); color:var(--blue); }
+
+.empty-msg {
+  padding:70px 24px; text-align:center;
+}
+.empty-msg .ei { font-size:46px; opacity:.3; margin-bottom:14px; }
+.empty-msg p { font-family:var(--serif); font-size:16px; color:var(--text-dim); margin-bottom:7px; }
+.empty-msg small { font-size:11px; color:var(--text-muted); }
+
+/* ═══════════════════════════════════════════════
+   DETAIL VIEW
+═══════════════════════════════════════════════ */
+.detail-wrap { padding-bottom:80px; }
+.detail-hero {
+  width:100%; aspect-ratio:3/4; background:var(--surface2); overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+.detail-hero { position:relative; touch-action:pan-y pinch-zoom; }
+.detail-hero img { width:100%; height:100%; object-fit:contain; display:block; user-select:none; -webkit-user-drag:none; }
+.photo-track { position:absolute; inset:0; will-change:transform; }
+.photo-track img { position:absolute; top:0; left:0; }
+.photo-track .photo-before { left:-100%; }
+.photo-track .photo-after { left:100%; }
+.photo-count { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); padding:5px 12px; border-radius:18px; background:rgba(30,24,18,.72); color:#fff; font-size:12px; pointer-events:none; }
+.photo-step { position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px; border:1px solid rgba(255,255,255,.5); border-radius:50%; background:rgba(30,24,18,.6); color:#fff; font-size:26px; display:flex; align-items:center; justify-content:center; }
+.photo-step.prev { left:10px; }
+.photo-step.next { right:10px; }
+.photo-step:disabled { opacity:.25; cursor:default; }
+.photo-step:focus-visible, .detail-hero:focus-visible { outline:3px solid var(--accent2); outline-offset:-3px; }
+.hero-ph { font-size:72px; opacity:.25; }
+
+.photo-mode-bar { display:flex; border-bottom:1px solid var(--border); background:var(--surface); }
+.pm-btn {
+  flex:1; padding:8px; background:transparent; border:none; font-size:10px;
+  letter-spacing:.07em; color:var(--text-muted); border-bottom:2px solid transparent;
+  transition:all .18s; font-family:var(--mono);
+}
+.pm-btn.on { color:var(--accent); border-bottom-color:var(--accent); }
+
+.thumb-strip {
+  display:flex; gap:3px; padding:4px; background:var(--surface2);
+  overflow-x:auto; scrollbar-width:none;
+}
+.thumb-strip::-webkit-scrollbar { display:none; }
+.t-thumb {
+  flex-shrink:0; width:50px; height:50px; object-fit:cover;
+  opacity:.5; border:1px solid transparent; cursor:pointer; transition:opacity .15s;
+}
+.t-thumb.on { opacity:1; border-color:var(--accent); }
+
+.detail-body { padding:16px 14px; }
+.d-wish-banner {
+  display:flex; align-items:center; gap:8px; padding:9px 12px; margin-bottom:13px;
+  background:var(--blue-bg); border:1px solid var(--blue); border-radius:var(--r);
+  font-size:12px; color:var(--blue);
+}
+.d-brand  { font-size:10px; letter-spacing:.14em; color:var(--accent); text-transform:uppercase; }
+.d-title  { font-family:var(--serif); font-size:22px; font-weight:500; line-height:1.3; margin:4px 0 7px; color:var(--text); }
+.d-stars  { font-size:16px; color:var(--gold); letter-spacing:2px; margin-bottom:13px; }
+.d-divider{ height:1px; background:var(--border); margin:13px 0; }
+.d-grid   { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:13px; }
+.d-field  {}
+.d-lbl    { font-size:9px; letter-spacing:.1em; color:var(--text-muted); text-transform:uppercase; margin-bottom:2px; }
+.d-val    { font-size:13px; color:var(--text); }
+.d-tags   { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+.d-tag    { padding:3px 9px; border:1px solid var(--border2); color:var(--text-dim); font-size:10px; border-radius:18px; }
+.d-sec-t  { font-size:9px; letter-spacing:.18em; color:var(--accent2); text-transform:uppercase; margin-bottom:9px; }
+.d-memo   { font-family:var(--serif); font-size:15px; font-weight:300; line-height:1.85; color:var(--text-dim); white-space:pre-wrap; margin-bottom:18px; }
+.d-map-btn{
+  display:flex; align-items:center; gap:8px; padding:10px 13px;
+  background:var(--surface); border:1px solid var(--border2); color:var(--accent);
+  text-decoration:none; font-size:11px; border-radius:var(--r); margin-bottom:13px;
+}
+.d-disp-box {
+  background:var(--red-bg); border:1px solid var(--red-border);
+  padding:11px 13px; margin-bottom:13px; border-radius:var(--r);
+}
+.d-disp-box .d-lbl { margin-bottom:3px; color:var(--red); }
+.d-disp-box .d-val { color:#903030; }
+.d-disp-note { margin-top:4px; font-size:11px; color:#b05050; }
+.d-active-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 11px; border-radius:20px; font-size:10px; letter-spacing:.06em;
+  background:var(--green-bg); border:1px solid var(--green-border); color:var(--green);
+  margin-bottom:12px;
+}
+
+/* ═══════════════════════════════════════════════
+   WISHLIST VIEW
+═══════════════════════════════════════════════ */
+.wish-stats { padding:10px 12px; display:flex; gap:14px; border-bottom:1px solid var(--border); background:var(--surface); }
+
+/* ═══════════════════════════════════════════════
+   SETTINGS VIEW
+═══════════════════════════════════════════════ */
+.settings-wrap { padding:20px 14px 80px; }
+.s-group { margin-bottom:22px; }
+.s-group-title { font-size:9px; letter-spacing:.2em; color:var(--accent2); text-transform:uppercase; padding-bottom:8px; border-bottom:1px solid var(--border); margin-bottom:2px; }
+.s-item { display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--border); gap:12px; }
+.s-item-left .s-t { font-size:13px; margin-bottom:2px; color:var(--text); }
+.s-item-left .s-d { font-size:11px; color:var(--text-muted); }
+.s-btn {
+  flex-shrink:0; padding:8px 15px; background:var(--bg); border:1px solid var(--border2);
+  color:var(--text-dim); font-size:11px; border-radius:var(--r); font-family:var(--mono); transition:all .18s;
+}
+.s-btn:active { background:var(--surface2); color:var(--accent); border-color:var(--accent2); }
+.app-footer { margin-top:40px; text-align:center; color:var(--text-muted); font-size:10px; line-height:2; }
+.app-footer strong { font-family:var(--serif); font-size:16px; font-weight:500; color:var(--accent2); display:block; margin-bottom:3px; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:3px; height:3px; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+/* ═══════════════════════════════════════════════
+   DETAIL CHAPTERS  (ver 3.0)
+═══════════════════════════════════════════════ */
+.d-chapter {
+  margin-bottom:0;
+  border-bottom:1px solid var(--border);
+}
+.d-chapter:last-child { border-bottom:none; }
+.d-chapter-title {
+  font-size:8.5px; letter-spacing:.28em; text-transform:uppercase;
+  color:var(--text-muted); padding:16px 14px 0;
+  font-family:var(--mono);
+}
+.d-chapter-body { padding:8px 14px 16px; }
+
+.d-active-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:20px; font-size:9.5px; letter-spacing:.08em;
+  background:var(--green-bg); border:1px solid var(--green-border); color:var(--green);
+  margin-bottom:11px;
+}
+.d-release-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:20px; font-size:9.5px; letter-spacing:.08em;
+  background:var(--disposed-bg); border:1px solid var(--red-border); color:#a05050;
+  margin-bottom:11px;
+}
+.d-acq-method {
+  display:inline-block; font-size:9.5px; letter-spacing:.09em;
+  padding:3px 9px; border:1px solid var(--border2); color:var(--accent2);
+  border-radius:18px; margin-bottom:10px;
+}
+.d-release-scene-block {
+  background:var(--disposed-bg); border:1px solid var(--red-border);
+  padding:12px; border-radius:var(--r);
+}
+.d-release-scene-block .d-grid { margin-bottom:8px; }
+
+
+#import-modal { z-index:1100; }
+#import-modal .modal-sheet { max-height:90dvh; overflow:auto; }
+.import-body { padding:16px; color:var(--text-dim); }
+.import-body select { width:100%; margin:10px 0; padding:10px; background:var(--bg); color:var(--text); border:1px solid var(--border2); }
+.import-body pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; font-size:12px; padding:8px; background:var(--surface2); }
+.import-body details { margin:8px 0; border-bottom:1px solid var(--border); padding-bottom:8px; }
+.import-error { color:var(--red); white-space:pre-wrap; }
+.import-body label { display:block; margin:12px 0; }
+.import-body input[type=checkbox] { margin-right:8px; }
+
+.browse-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background:var(--surface); font-size:12px; }
+.browse-row button,.utility-row button { min-height:44px; }
+button:disabled { cursor:default; opacity:.4; }
+.gallery-hint { font-size:11px; text-align:center; padding:8px; color:var(--text-dim); }
+.gallery-controls .thumb-strip { padding:6px; gap:6px; }
+.gallery-controls .t-thumb { width:58px; height:58px; }
+.utility-row { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 14px; }
+.import-record,.backup-row { padding:12px; border:1px solid var(--border2); border-radius:var(--r); margin:12px 0; background:var(--surface); }
+.import-record summary { cursor:pointer; font-size:14px; padding:6px 0; }
+.import-photos { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:8px 0; }
+.import-photos img { width:58px; height:72px; object-fit:contain; background:var(--surface2); }
+.import-field { padding:10px 0; border-top:1px solid var(--border); white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
+.import-field strong { display:block; margin-bottom:6px; }
+.import-old,.backup-reason { color:var(--text-dim); font-size:12px; margin-bottom:5px; }
+.backup-row label { display:flex; align-items:flex-start; gap:10px; font-size:13px; }
+.backup-select { min-width:22px; min-height:22px; }
+#backup-modal { z-index:1000; }
+#backup-summary,#backup-rows { padding:12px 16px; }
+#backup-modal .modal-actions { position:sticky; bottom:0; padding:12px 16px; background:var(--surface); }
+.photo-lightbox { display:none; position:fixed; inset:0; z-index:1500; background:#15120f; color:#fff; flex-direction:column; padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); }
+.photo-lightbox.open { display:flex; }
+.lightbox-top,.lightbox-bottom { display:flex; gap:8px; align-items:center; justify-content:space-between; padding:10px 12px; flex-shrink:0; background:#24201b; }
+.photo-lightbox button { min-height:44px; min-width:44px; padding:7px 12px; border:1px solid #82786d; background:#302a24; color:#fff; border-radius:6px; font-size:14px; }
+#lightbox-stage { position:relative; flex:1; min-height:0; overflow:hidden; touch-action:none; }
+#lightbox-image { width:100%; height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; }
+.lightbox-bottom { flex-wrap:wrap; justify-content:center; }
+.lightbox-tip { font-size:11px; text-align:center; padding:5px; }
+</style>
+</head>
+<body>
+
+<!-- ■■■ HEADER ■■■ -->
+<header id="app-header">
+  <div class="logo">THE <em>COAT</em> ARCHIVE</div>
+  <div class="hdr-right">
+    <button class="icon-btn" id="btn-sort" title="並び替え">↕</button>
+    <button class="icon-btn" id="btn-filter" title="絞り込み">⚙</button>
+  </div>
+</header>
+
+<!-- ■■■ NAV ■■■ -->
+<nav id="app-nav">
+  <button class="nav-btn active" data-view="col">コレクション</button>
+  <button class="nav-btn" data-view="wish">ほしい<span class="nav-badge" id="wish-badge">0</span></button>
+  <button class="nav-btn" data-view="form-new">＋ 追加</button>
+  <button class="nav-btn" data-view="settings">設定</button>
+</nav>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════
+     VIEW: COLLECTION
+═══════════════════════════════════════════════ -->
+<div class="view active" id="view-col">
+  <div class="search-bar">
+    <input class="search-inp" id="search-inp" type="search" placeholder="名称・来歴・所感で検索">
+    <button class="sort-pill" id="sort-pill-btn">↕ <span id="sort-label">手動順</span></button>
+  </div>
+  <div class="sort-panel" id="sort-panel">
+    <button class="sort-chip on" data-sort="manual">手動順</button>
+    <button class="sort-chip" data-sort="newest">新着↓</button>
+    <button class="sort-chip" data-sort="oldest">古い↑</button>
+    <button class="sort-chip" data-sort="rating-d">評価↓</button>
+    <button class="sort-chip" data-sort="rating-a">評価↑</button>
+    <button class="sort-chip" data-sort="price-d">価格↓</button>
+    <button class="sort-chip" data-sort="price-a">価格↑</button>
+    <button class="sort-chip" data-sort="maker">ブランド</button>
+  </div>
+  <div class="filter-bar" id="filter-bar">
+    <button class="fchip on" data-f="all">すべて</button>
+    <button class="fchip" data-f="active">収蔵中</button>
+    <button class="fchip" data-f="disposed">手放し済</button>
+    <button class="fchip" data-f="fav5">★5</button>
+    <button class="fchip" data-f="fav4">★4以上</button>
+    <button class="fchip" data-f="has-recollection">追想あり</button>
+    <button class="fchip" data-f="has-acqscene">発見記録あり</button>
+    <button class="fchip" data-f="ダウンコート">ダウンコート</button>
+    <button class="fchip" data-f="チェスターコート">チェスター</button>
+    <button class="fchip" data-f="ステンカラーコート">ステンカラー</button>
+    <button class="fchip" data-f="ダッフルコート">ダッフル</button>
+    <button class="fchip" data-f="ピーコート">ピーコート</button>
+    <button class="fchip" data-f="ダウンジャケット">ダウンジャケット</button>
+  </div>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-n" id="s-total">0</span><span class="stat-l">Total</span></div>
+    <div class="stat"><span class="stat-n" id="s-active">0</span><span class="stat-l">収蔵中</span></div>
+    <div class="stat"><span class="stat-n" id="s-disp">0</span><span class="stat-l">手放し済</span></div>
+    <div class="stat"><span class="stat-n" id="s-rating">—</span><span class="stat-l">平均★</span></div>
+    <div class="stat"><span class="stat-n" id="s-price">¥0</span><span class="stat-l">総額</span></div>
+  </div>
+  <div class="card-list" id="card-list"></div>
+  <div class="empty-msg" id="col-empty" style="display:none">
+    <div class="ei">🧥</div>
+    <p>コートがまだありません</p>
+    <small>右下の ＋ から追加してください</small>
+  </div>
+  <button class="fab" id="fab-col">＋</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     VIEW: WISHLIST
+═══════════════════════════════════════════════ -->
+<div class="view" id="view-wish">
+  <div class="search-bar">
+    <input class="search-inp" id="wish-inp" type="search" placeholder="ほしいコートを検索…">
+  </div>
+  <div class="wish-stats">
+    <div class="stat"><span class="stat-n" id="w-total">0</span><span class="stat-l">登録数</span></div>
+    <div class="stat"><span class="stat-n" id="w-price">¥0</span><span class="stat-l">希望額合計</span></div>
+  </div>
+  <div class="card-list" id="wish-list"></div>
+  <div class="empty-msg" id="wish-empty" style="display:none">
+    <div class="ei">🛍️</div>
+    <p>ほしいコートがありません</p>
+    <small>右下の ♡ から登録してください</small>
+  </div>
+  <button class="fab-sub" id="fab-wish" style="bottom:22px">♡</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     VIEW: FORM (ADD / EDIT)
+═══════════════════════════════════════════════ -->
+<div class="view" id="view-form">
+  <div class="form-wrap">
+
+    <!-- タイプ -->
+    <div class="f-section" id="fs-type">
+      <div class="f-section-title">登録タイプ</div>
+      <div class="type-row">
+        <button class="type-btn on-coat" id="type-coat" onclick="setType('coat')">🧥 コレクション</button>
+        <button class="type-btn" id="type-wish" onclick="setType('wish')">♡ ほしいコート</button>
+      </div>
+    </div>
+
+    <!-- 基本情報 -->
+    <div class="f-section">
+      <div class="f-section-title">基本情報</div>
+      <div class="field">
+        <label class="field-lbl">メーカー / ブランド</label>
+        <input class="field-inp" id="f-maker" type="text" placeholder="例：Burberry, CANADA GOOSE">
+      </div>
+      <div class="two-col">
+        <div class="field">
+          <label class="field-lbl">種類</label>
+          <select class="field-sel" id="f-type" onchange="document.getElementById('f-type-txt').style.display=this.value==='自由入力'?'block':'none'">
+            <option value="">選択…</option>
+            <option>ダウンコート</option><option>チェスターコート</option>
+            <option>ノーカラーコート</option><option>ステンカラーコート</option>
+            <option>ダッフルコート</option><option>ダブルコート</option>
+            <option>ピーコート</option><option>ダウンジャケット</option>
+            <option>中綿コート</option><option>アンゴラコート</option>
+            <option value="自由入力">自由入力…</option>
+          </select>
+          <input class="field-inp" id="f-type-txt" type="text" placeholder="種類を入力" style="margin-top:6px;display:none">
+        </div>
+        <div class="field">
+          <label class="field-lbl">系統</label>
+          <select class="field-sel" id="f-style">
+            <option value="">選択…</option>
+            <option>カジュアル</option><option>フォーマル</option><option>ビジネス</option>
+            <option>アウトドア</option><option>ストリート</option><option>ヴィンテージ</option><option>ラグジュアリー</option>
+          </select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field">
+          <label class="field-lbl">色</label>
+          <input class="field-inp" id="f-color" type="text" placeholder="例：キャメル、ネイビー">
+        </div>
+        <div class="field">
+          <label class="field-lbl">サイズ</label>
+          <input class="field-inp" id="f-size" type="text" placeholder="例：M, 38, XL">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-lbl">表地素材</label>
+        <select class="field-sel" id="f-outer" onchange="document.getElementById('f-outer-txt').style.display=this.value==='自由入力'?'block':'none'">
+          <option value="">選択…</option>
+          <option>ポリエステル</option><option>ナイロン</option><option>アンゴラ</option>
+          <option>ウール</option>
+          <option value="自由入力">自由入力…</option>
+        </select>
+        <input class="field-inp" id="f-outer-txt" type="text" placeholder="素材を入力" style="margin-top:6px;display:none">
+      </div>
+      <div class="field">
+        <label class="field-lbl">裏地素材</label>
+        <select class="field-sel" id="f-inner" onchange="document.getElementById('f-inner-txt').style.display=this.value==='自由入力'?'block':'none'">
+          <option value="">選択…</option>
+          <option>ポリエステル</option><option>ナイロン</option><option>コットン</option><option>なし</option>
+          <option value="自由入力">自由入力…</option>
+        </select>
+        <input class="field-inp" id="f-inner-txt" type="text" placeholder="素材を入力" style="margin-top:6px;display:none">
+      </div>
+    </div>
+
+    <!-- 発見 / 入手記録 -->
+    <div class="f-section">
+      <div class="f-section-title" id="acq-title">発見 / 入手記録</div>
+      <div class="two-col">
+        <div class="field">
+          <label class="field-lbl" id="date-lbl">入手日</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input class="field-inp" id="f-date" type="text" placeholder="例：2024-03-15" style="flex:1">
+            <button type="button" class="pill-btn" style="white-space:nowrap;padding:6px 10px;font-size:11px" onclick="document.getElementById('f-date').value='不明'">不明</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-lbl" id="price-lbl">価格（円）</label>
+          <input class="field-inp" id="f-price" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-lbl">入手経路</label>
+        <select class="field-sel" id="f-acq-method" onchange="document.getElementById('f-acq-method-txt').style.display=this.value==='自由入力'?'block':'none'">
+          <option value="">選択…</option>
+          <option>燃えるゴミ</option><option>衣類ゴミ</option><option>回収BOX</option>
+          <option>メルカリ</option><option>ヤフオク</option><option value="自由入力">自由入力</option>
+        </select>
+        <input class="field-inp" id="f-acq-method-txt" type="text" placeholder="入手経路を入力" style="margin-top:6px;display:none">
+      </div>
+      <div class="field" id="location-field">
+        <label class="field-lbl">発見場所</label>
+        <input class="field-inp" id="f-loc" type="text" placeholder="例：〇〇区〇〇アパート前、一戸建て">
+      </div>
+      <div class="field" id="map-field">
+        <label class="field-lbl">マップURL</label>
+        <div class="map-row">
+          <input class="field-inp" id="f-map" type="url" placeholder="Google Maps URL">
+          <button class="icon-btn" id="map-preview-btn">📍</button>
+        </div>
+        <div class="map-hint" id="map-hint"></div>
+      </div>
+      <div class="field">
+        <label class="field-lbl">発見時状況</label>
+        <textarea class="field-ta" id="f-acq-scene" placeholder="どう置かれていたか、袋の状態、周囲の様子など…" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-lbl">ゴミ種別</label>
+        <input class="field-inp" id="f-trash-type" type="text" placeholder="例：資源ゴミ袋、衣類ゴミ、まとめ袋の中">
+      </div>
+      <div class="field">
+        <label class="field-lbl">一緒にあったもの</label>
+        <input class="field-inp" id="f-companions" type="text" placeholder="例：他のコート2着、靴、日用品など">
+      </div>
+      <div class="field">
+        <label class="field-lbl">生活の気配</label>
+        <textarea class="field-ta" id="f-life-trace" placeholder="その場所から感じた気配、生活の断片…" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-lbl">回収 / 入手理由</label>
+        <textarea class="field-ta" id="f-acq-reason" placeholder="なぜ持ち帰ったか、なぜ欲しいと思ったか…" rows="3"></textarea>
+      </div>
+    </div>
+
+    <!-- 収蔵中の所感 (coat only) -->
+    <div class="f-section" id="fs-feel">
+      <div class="f-section-title">収蔵中の所感</div>
+      <div class="field">
+        <label class="field-lbl">お気に入り度</label>
+        <div class="stars-row" id="stars-row">
+          <button class="star-btn" data-v="1">★</button>
+          <button class="star-btn" data-v="2">★</button>
+          <button class="star-btn" data-v="3">★</button>
+          <button class="star-btn" data-v="4">★</button>
+          <button class="star-btn" data-v="5">★</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-lbl">香り / 手触りの印象</label>
+        <div class="pill-group" id="texture-pills">
+          <button class="pill-btn" data-v="さらさら">さらさら</button>
+          <button class="pill-btn" data-v="ふわふわ">ふわふわ</button>
+          <button class="pill-btn" data-v="もこもこ">もこもこ</button>
+          <button class="pill-btn" data-v="ざらざら">ざらざら</button>
+          <button class="pill-btn" data-v="なめらか">なめらか</button>
+          <button class="pill-btn" data-v="硬い">硬い</button>
+          <button class="pill-btn" data-v="軽い">軽い</button>
+          <button class="pill-btn" data-v="重厚">重厚</button>
+          <button class="pill-btn" data-v="温かい">温かい</button>
+          <button class="pill-btn" data-v="撥水">撥水</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-lbl">収蔵中の所感</label>
+        <textarea class="field-ta" id="f-feel-note" placeholder="着心地、素材感、愛着の変化など…" rows="3"></textarea>
+      </div>
+    </div>
+
+    <!-- 写真 -->
+    <div class="f-section">
+      <div class="f-section-title">コートの写真</div>
+      <div class="photo-hint">最大20枚 / 追加時に自動圧縮（各80KiBを目標）<span id="coat-photo-cnt"> 0/20</span></div>
+      <div class="photo-grid" id="coat-photo-grid"></div>
+      <input type="file" id="fi-coat" accept="image/*" multiple>
+    </div>
+
+    <!-- 所感・記録 -->
+    <div class="f-section">
+      <div class="f-section-title" id="memo-title">所感・記録</div>
+      <div class="field">
+        <label class="field-lbl" id="memo-lbl">このコートとの記録</label>
+        <textarea class="field-ta" id="f-memo" rows="5" placeholder="収蔵中に感じたこと、着た場面、印象の変化…"></textarea>
+      </div>
+    </div>
+
+    <!-- 手放し記録 (coat only) -->
+    <div class="f-section" id="fs-disp">
+      <div class="f-section-title">手放し記録</div>
+      <div class="toggle-row">
+        <span class="toggle-lbl">手放し記録を残す</span>
+        <div class="toggle-sw" id="disp-toggle"></div>
+      </div>
+      <div class="disp-body" id="disp-body">
+        <div class="two-col" style="margin-top:12px">
+          <div class="field">
+            <label class="field-lbl">手放し日</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input class="field-inp" id="f-disp-date" type="text" placeholder="例：2024-06-01" style="flex:1">
+              <button type="button" class="pill-btn" style="white-space:nowrap;padding:6px 10px;font-size:11px" onclick="document.getElementById('f-disp-date').value='不明'">不明</button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-lbl">手放し方法</label>
+            <select class="field-sel" id="f-disp-method" onchange="document.getElementById('f-disp-method-txt').style.display=this.value==='自由入力'?'block':'none'">
+              <option value="">選択…</option>
+              <option>燃えるゴミ</option><option>資源ゴミ</option>
+              <option>資源回収BOX</option><option>譲渡</option>
+              <option>売却</option><option value="自由入力">自由入力</option>
+            </select>
+            <input class="field-inp" id="f-disp-method-txt" type="text" placeholder="方法を入力" style="margin-top:6px;display:none">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-lbl">手放し場所</label>
+          <input class="field-inp" id="f-disp-note" type="text" placeholder="例：近所の資源回収BOX、知人へ">
+        </div>
+        <div class="field">
+          <label class="field-lbl">手放し理由</label>
+          <input class="field-inp" id="f-release-reason" type="text" placeholder="例：サイズが合わなくなった、整理のため">
+        </div>
+        <div class="field">
+          <label class="field-lbl">手放し場面</label>
+          <textarea class="field-ta" id="f-release-scene" placeholder="その日の様子、迷いの記憶、最後に手に取ったときのこと…" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-lbl">最後の所感</label>
+          <textarea class="field-ta" id="f-last-note" placeholder="手放すときに思ったこと…" rows="2"></textarea>
+        </div>
+        <div class="field" style="margin-top:8px">
+          <div class="f-section-title" style="margin-bottom:10px">手放し時の写真</div>
+          <div class="photo-hint">最大20枚<span id="disp-photo-cnt"> 0/20</span></div>
+          <div class="photo-grid" id="disp-photo-grid"></div>
+          <input type="file" id="fi-disp" accept="image/*" multiple>
+        </div>
+      </div>
+    </div>
+
+    <!-- 追想 (coat only) -->
+    <div class="f-section" id="fs-recollection">
+      <div class="f-section-title">追想</div>
+      <div class="field">
+        <label class="field-lbl">後から思い出すこと</label>
+        <textarea class="field-ta" id="f-recollection" placeholder="手放した後に思い返すこと、ふと頭に浮かぶ断片…" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-lbl">今も残る印象</label>
+        <textarea class="field-ta" id="f-remaining-impression" placeholder="今でも残っている感覚、香り、重さの記憶…" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-lbl">比較・参照メモ</label>
+        <input class="field-inp" id="f-comparison-note" type="text" placeholder="例：あのネイビーのコートに似ていた">
+      </div>
+    </div>
+
+  </div><!-- /form-wrap -->
+
+  <div class="fixed-bar">
+    <button class="btn btn-ghost" id="form-cancel">キャンセル</button>
+    <button class="btn btn-primary" id="form-save">保存する</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     VIEW: DETAIL
+═══════════════════════════════════════════════ -->
+<div class="view" id="view-detail">
+  <div class="detail-wrap" id="detail-wrap"></div>
+  <div class="fixed-bar" id="detail-bar"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     VIEW: SETTINGS
+═══════════════════════════════════════════════ -->
+<div class="view" id="view-settings">
+  <div class="settings-wrap">
+    <div class="s-group">
+      <div class="s-group-title">バックアップ</div>
+      <div class="s-item">
+        <div class="s-item-left"><div class="s-t">データをエクスポート</div><div class="s-d">全コレクションをJSONで保存</div></div>
+        <button class="s-btn" id="s-export">書き出し</button>
+      </div>
+      <div class="s-item">
+        <div class="s-item-left"><div class="s-t">データをインポート</div><div class="s-d">新規追加・既存項目更新・完全復元</div></div>
+        <button class="s-btn" id="s-import">読み込み</button>
+        <input type="file" id="fi-import" accept=".json" style="display:none">
+      </div>
+    </div>
+    <div class="s-group">
+      <div class="s-group-title">端末内バックアップ</div>
+      <div class="s-item"><div class="s-item-left"><div class="s-t">保存した状態に戻す</div><div class="s-d">更新・復元・削除前の記録を保持</div></div><button class="s-btn" id="s-backups">履歴</button></div>
+    </div>
+    <div class="s-group">
+      <div class="s-group-title">データ管理</div>
+      <div class="s-item">
+        <div class="s-item-left"><div class="s-t">ストレージ使用量</div><div class="s-d" id="storage-info">計算中…</div></div>
+        <button class="s-btn" id="s-calc">更新</button>
+      </div>
+      <div class="s-item">
+        <div class="s-item-left"><div class="s-t">全データを削除</div><div class="s-d">削除前に端末内バックアップを保存</div></div>
+        <button class="s-btn" id="s-clear" style="border-color:var(--red);color:var(--red)">削除</button>
+      </div>
+    </div>
+    <div class="app-footer">
+      <strong>The Coat Archive</strong>
+      ver 4.6 · THE COAT ARCHIVE<br>
+      データはこのデバイスのIndexedDBに保存されます<br>
+      <span style="color:var(--border2)">ImageCompression: adaptive binary-search · target 80KB/photo</span>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
+<div class="modal-sheet"><div class="modal-handle"></div><div class="modal-title" id="import-title">記録ファイルの取り込み</div>
+<div class="import-body"><div id="import-file"></div>
+<select id="import-mode" aria-label="取り込み方法"><option value="add">新規追加のみ</option><option value="update">追加と更新</option><option value="restore">ファイルの状態に全件復元</option></select>
+<div id="import-summary"></div><div id="import-errors" class="import-error"></div><div id="import-diffs"></div>
+<label><input type="checkbox" id="import-agree">表示した追加・変更内容で取り込みます</label>
+<button class="s-btn" id="import-backup-download">現在の全件をファイルに保存</button><div id="import-status" aria-live="polite"></div></div>
+<div class="modal-actions"><button class="s-btn" id="import-cancel">キャンセル</button><button class="s-btn" id="import-apply" disabled>この内容で取り込む</button></div>
+</div></div>
+
+<!-- DELETE MODAL -->
+<div class="modal-bg" id="del-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">削除の確認</div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text-dim);line-height:1.8">この記録を削除します。<br>削除前の状態を端末内バックアップに保存します。設定の「履歴」から復元できます。</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="del-cancel">キャンセル</button>
+      <button class="btn btn-red" id="del-confirm">削除する</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-bg" id="backup-modal" role="dialog" aria-modal="true" aria-labelledby="backup-title">
+ <div class="modal-sheet"><div class="modal-title" id="backup-title">端末内バックアップ履歴</div><div id="backup-summary"></div><div id="backup-rows"></div>
+ <div class="modal-actions"><button class="s-btn" id="backup-close">閉じる</button><button class="s-btn" id="backup-delete" style="color:var(--red)">選択した履歴を削除</button></div></div>
+</div>
+<div class="photo-lightbox" id="photo-lightbox" role="dialog" aria-modal="true" aria-label="写真の拡大表示" aria-hidden="true">
+ <div class="lightbox-top"><span id="lightbox-count" aria-live="polite"></span><button id="lightbox-close">閉じる ×</button></div>
+ <div id="lightbox-stage"><img id="lightbox-image" alt="拡大写真" draggable="false"></div>
+ <div class="lightbox-bottom"><button id="lightbox-prev" aria-label="前の写真">‹</button><button id="lightbox-minus" aria-label="縮小">−</button><span id="lightbox-zoom-label">100%</span><button id="lightbox-plus" aria-label="拡大">＋</button><button id="lightbox-reset">全体</button><button id="lightbox-next" aria-label="次の写真">›</button></div>
+ <p class="lightbox-tip">指で広げて拡大・拡大中はドラッグで移動</p>
+</div>
+
+<script>
+/* v4.3: offline, lossless JSON import. No record content is sent anywhere. */
+const ARCHIVE_TEXT_KEYS = 'maker type style color size outerMat innerMat date locationName mapUrl feelNote memo acqMethod acqScene trashType companions lifeTrace acqReason dispDate dispMethod dispNote releaseReason releaseScene lastNote recollection remainingImpression comparisonNote'.split(' ');
+const PHOTO_LIMIT = 20;
+const IMPORT_MAX_BYTES = 128 * 1024 * 1024;
+function canonical(value) {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])]));
+  }
+  return value;
+}
+function sameJSON(a,b) { return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b)); }
+function sameRecords(a,b) {
+  const order = arr => [...arr].sort((x,y) => x.id<y.id ? -1 : x.id>y.id ? 1 : 0);
+  return sameJSON(order(a), order(b));
+}
+function emptyUpdate(value) { return value === '' || value === null || (Array.isArray(value) && value.length === 0); }
+function safeMapURL(value) {
+  try { const url = new URL(String(value)); return ['https:','http:'].includes(url.protocol) ? url.href : ''; }
+  catch { return ''; }
+}
+function imageSyntax(value) {
+  return typeof value === 'string' && /^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
+}
+function safeImage(value) { return imageSyntax(value) ? value : ''; }
+function validateArchive(items) {
+  if (!Array.isArray(items)) throw new Error('JSONのトップレベルは全件配列である必要があります');
+  const ids = new Set();
+  items.forEach((item,i) => {
+    const fail = message => { throw new Error(`${i+1}件目: ${message}`); };
+    if (!item || typeof item !== 'object' || Array.isArray(item)) fail('記録がオブジェクトではありません');
+    if (typeof item.id !== 'string' || !item.id.trim()) fail('空ではない文字列のidが必要です');
+    if (ids.has(item.id)) fail('ファイル内でidが重複しています');
+    ids.add(item.id);
+    if (item.itemType != null && !['coat','wish'].includes(item.itemType)) fail('itemTypeが不正です');
+    if (item.disposed != null && typeof item.disposed !== 'boolean') fail('disposedは真偽値で指定してください');
+    for (const key of ARCHIVE_TEXT_KEYS) if (item[key] != null && typeof item[key] !== 'string') fail(`${key}は文字列で指定してください`);
+    if (item.price != null && !['string','number'].includes(typeof item.price)) fail('priceが不正です');
+    if (item.rating != null && (!Number.isInteger(item.rating) || item.rating < 0 || item.rating > 5)) fail('ratingは0〜5の整数で指定してください');
+    if (item.manualOrder != null && (typeof item.manualOrder !== 'number' || !Number.isFinite(item.manualOrder))) fail('manualOrderが不正です');
+    for (const key of ['createdAt','updatedAt']) {
+      const v = item[key];
+      if (v != null && !(typeof v === 'number' && Number.isFinite(v)) && !(typeof v === 'string' && v.trim() && Number.isFinite(Date.parse(v)))) fail(`${key}は日時または数値で指定してください`);
+    }
+    // Legacy v4.2 could insert null when date buttons were mistaken for texture buttons.
+    // Keep those entries byte-for-byte instead of silently cleaning the user's snapshot.
+    if (item.textures != null && (!Array.isArray(item.textures) || item.textures.some(x => x !== null && typeof x !== 'string'))) fail('texturesは文字列配列で指定してください（旧版のnull要素は保持します）');
+    for (const key of ['photos','dispPhotos']) {
+      if (item[key] == null) continue;
+      if (!Array.isArray(item[key]) || item[key].some(x => !imageSyntax(x))) fail(`${key}にはJPEG/PNG/WebP/GIFのBase64画像配列が必要です`);
+    }
+  });
+  return items;
+}
+async function validateImageData(items) {
+  const seen = new Set();
+  for (const item of items) for (const key of ['photos','dispPhotos']) for (const src of item[key] || []) {
+    if (seen.has(src)) continue;
+    seen.add(src);
+    await new Promise((resolve,reject) => {
+      const img = new Image();
+      const timer = setTimeout(() => { img.src = ''; reject(new Error('画像の読み込みがタイムアウトしました')); },15000);
+      img.onload = () => { clearTimeout(timer); if (img.naturalWidth && img.naturalHeight) resolve(); else reject(new Error('画像のサイズが不正です')); };
+      img.onerror = () => { clearTimeout(timer); reject(new Error('壊れた画像を検出しました。取り込みを中止します')); };
+      img.src = src;
+    });
+  }
+}
+function mergeRecord(existing,incoming) {
+  const merged = structuredClone(existing);
+  for (const [key,value] of Object.entries(incoming)) {
+    if (key === 'id' || emptyUpdate(value)) continue;
+    let next = structuredClone(value);
+    if (key === 'photos' || key === 'dispPhotos') {
+      next = [...(existing[key] || [])];
+      const seen = new Set(next);
+      for (const src of value) if (!seen.has(src)) { next.push(src); seen.add(src); }
+    }
+    Object.defineProperty(merged,key,{value:next,writable:true,enumerable:true,configurable:true});
+  }
+  return merged;
+}
+function archiveStats(items) {
+  return { records:items.length, photos:items.reduce((s,x) => s+(x.photos?.length || 0),0), dispPhotos:items.reduce((s,x) => s+(x.dispPhotos?.length || 0),0) };
+}
+function planArchiveImport(existing,incoming,mode) {
+  validateArchive(incoming);
+  if (!['add','update','restore'].includes(mode)) throw new Error('取り込み方法が不正です');
+  const current = new Map(existing.map(x => [x.id,x]));
+  const input = new Set(incoming.map(x => x.id));
+  const rows = [], errors = [], warnings = [];
+  let added=0, changed=0, unchanged=0, skipped=0, older=0;
+  const next = mode === 'restore' ? [] : structuredClone(existing);
+  const index = new Map(next.map((x,i) => [x.id,i]));
+  incoming.forEach(item => {
+    const old = current.get(item.id);
+    let proposed;
+    if (mode === 'add' && old) { skipped++; proposed=old; }
+    else if (mode === 'update' && old) proposed=mergeRecord(old,item);
+    else proposed=structuredClone(item);
+    const fields = old ? [...new Set([...Object.keys(old),...Object.keys(proposed)])].filter(k => !sameJSON(old[k],proposed[k])) : Object.keys(proposed);
+    if (!old) added++; else if (fields.length) changed++; else unchanged++;
+    const stamp = v => typeof v === 'number' ? v : Date.parse(v);
+    const isOlder = old && Number.isFinite(stamp(old.updatedAt)) && Number.isFinite(stamp(item.updatedAt)) && stamp(item.updatedAt)<stamp(old.updatedAt);
+    if (isOlder) older++;
+    for (const key of ['photos','dispPhotos']) {
+      const count = proposed[key]?.length || 0;
+      const prev = old?.[key]?.length || 0;
+      if (count > PHOTO_LIMIT) {
+        if (mode === 'restore' || (old && count<=prev)) warnings.push(`${item.id}: ${key} ${count}枚を全枚保持します。追加は20枚までです`);
+        else errors.push(`${item.id}: ${key}が${count}枚になります。上限20枚を超えるため取り込めません`);
+      }
+    }
+    rows.push({id:item.id,old,proposed,fields,isOlder,action:!old?'新規追加':mode==='add'?'スキップ':fields.length?'更新':'変更なし'});
+    if (mode === 'restore') next.push(proposed);
+    else if (!old) { index.set(item.id,next.length); next.push(proposed); }
+    else if (mode === 'update') next[index.get(item.id)] = proposed;
+  });
+  const deleted = mode === 'restore' ? existing.filter(x => !input.has(x.id)) : [];
+  return {next,rows,deleted,errors,warnings,added,changed,unchanged,skipped,older,existing:incoming.length-added,before:archiveStats(existing),after:archiveStats(next)};
+}
+const FORM_FIELDS = {
+  itemType:['$type'],maker:['f-maker'],type:['f-type','f-type-txt'],style:['f-style'],color:['f-color'],size:['f-size'],outerMat:['f-outer','f-outer-txt'],innerMat:['f-inner','f-inner-txt'],date:['f-date'],price:['f-price'],locationName:['f-loc'],mapUrl:['f-map'],rating:['$rating'],textures:['$textures'],feelNote:['f-feel-note'],photos:['$photos'],memo:['f-memo'],acqMethod:['f-acq-method','f-acq-method-txt'],acqScene:['f-acq-scene'],trashType:['f-trash-type'],companions:['f-companions'],lifeTrace:['f-life-trace'],acqReason:['f-acq-reason'],disposed:['$disposed'],dispDate:['f-disp-date'],dispMethod:['f-disp-method','f-disp-method-txt'],dispNote:['f-disp-note'],dispPhotos:['$dispPhotos'],releaseReason:['f-release-reason'],releaseScene:['f-release-scene'],lastNote:['f-last-note'],recollection:['f-recollection'],remainingImpression:['f-remaining-impression'],comparisonNote:['f-comparison-note']
+};
+function captureFormValues() {
+  const values = {};
+  for (const id of Object.values(FORM_FIELDS).flat()) if (!id.startsWith('$')) values[id]=document.getElementById(id)?.value;
+  return {...values,$type:S.formType,$rating:S.formRating,$textures:[...S.formTex],$photos:[...S.formPhotos],$disposed:S.formDisp,$dispPhotos:[...S.formDispPh]};
+}
+async function backupDB() {
+  return new Promise((resolve,reject) => {
+    const req=indexedDB.open('CoatArchiveBackupsV1',1);
+    req.onupgradeneeded=() => req.result.createObjectStore('snapshots',{keyPath:'id'});
+    req.onsuccess=() => resolve(req.result);
+    req.onerror=() => reject(new Error('バックアップ領域を開けません: '+req.error?.message));
+  });
+}
+async function saveArchiveBackup(items,reason) {
+  const db=await backupDB();
+  const snapshot={id:crypto.randomUUID(),at:Date.now(),reason,items:structuredClone(items),sizeBytes:jsonSize(items)};
+  try {
+    await new Promise((resolve,reject) => {
+      const tx=db.transaction('snapshots','readwrite');
+      tx.objectStore('snapshots').add(snapshot);
+      tx.oncomplete=resolve;
+      tx.onerror=tx.onabort=() => reject(new Error('バックアップ保存に失敗しました。変更を中止します: '+tx.error?.message));
+    });
+  } finally { db.close(); }
+  return snapshot;
+}
+async function archiveBackups() {
+  const db=await backupDB();
+  try { return await new Promise((resolve,reject) => {
+    const list=[],tx=db.transaction('snapshots','readonly');const req=tx.objectStore('snapshots').openCursor();
+    req.onsuccess=() => {
+      const cursor=req.result;
+      if (!cursor) { resolve(list.sort((a,b) => b.at-a.at));return; }
+      const s=cursor.value;
+      list.push({id:s.id,at:s.at,reason:s.reason,recordCount:s.items.length,sizeBytes:s.sizeBytes??jsonSize(s.items)});
+      cursor.continue();
+    };
+    req.onerror=() => reject(req.error);
+  }); } finally { db.close(); }
+}
+async function loadArchiveBackup(id) {
+  const db=await backupDB();
+  try { return await new Promise((resolve,reject) => {
+    const req=db.transaction('snapshots','readonly').objectStore('snapshots').get(id);
+    req.onsuccess=() => req.result ? resolve(req.result) : reject(new Error('バックアップが見つかりません'));
+    req.onerror=() => reject(req.error);
+  }); } finally { db.close(); }
+}
+function downloadArchive(items,prefix='coat-archive') {
+  const blob = new Blob([JSON.stringify(items,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url;a.download=`${prefix}-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;a.click();
+  setTimeout(() => URL.revokeObjectURL(url),3000);
+}
+
+
+'use strict';
+/* ═══════════════════════════════════════════════════════════
+   SECTION 1: IndexedDB  ─  唯一のストレージ
+═══════════════════════════════════════════════════════════ */
+const DB_NAME  = 'CoatArchiveDB';
+const DB_VER   = 1;
+const DB_STORE = 'items';
+let   _db      = null;
+
+function dbOpen() {
+  if (_db) return Promise.resolve(_db);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = ev => {
+      const db = ev.target.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) {
+        db.createObjectStore(DB_STORE, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = ev => { _db = ev.target.result; resolve(_db); };
+    req.onerror   = ()  => reject(new Error('IndexedDB open failed: ' + req.error?.message));
+    req.onblocked = ()  => reject(new Error('IndexedDB blocked by another tab'));
+  });
+}
+
+async function dbGetAll() {
+  const db = await dbOpen();
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(DB_STORE, 'readonly');
+    const req = tx.objectStore(DB_STORE).getAll();
+    req.onsuccess = () => resolve(req.result ?? []);
+    req.onerror   = () => reject(new Error('dbGetAll failed: ' + req.error?.message));
+  });
+}
+
+async function dbPutAll(items,expected) {
+  if (!Array.isArray(items)) throw new Error('保存対象が配列ではありません');
+  const ids=new Set();
+  for (const item of items) {
+    if (!item || typeof item.id !== 'string' || !item.id || ids.has(item.id)) throw new Error('保存対象のIDが欠落・重複しています');
+    ids.add(item.id);
+  }
+  const db=await dbOpen();
+  return new Promise((resolve,reject) => {
+    const tx=db.transaction(DB_STORE,'readwrite'), store=tx.objectStore(DB_STORE);
+    let cause;
+    const abort = message => { cause=new Error(message);tx.abort(); };
+    const before=store.getAll();
+    before.onsuccess=() => {
+      if (expected && !sameRecords(before.result,expected)) { abort('確認後にデータが変更されました。取り込みをやり直してください');return; }
+      try {
+        store.clear();
+        for (const item of items) store.put(item);
+        const check=store.getAll();
+        check.onsuccess=() => { if (!sameRecords(check.result,items)) abort('保存内容の照合に失敗しました。元の状態を維持しました'); };
+      } catch(e) { cause=e;tx.abort(); }
+    };
+    tx.oncomplete=() => resolve();
+    tx.onerror=tx.onabort=() => reject(cause || new Error('保存に失敗しました。元の状態を維持しました: '+tx.error?.message));
+  });
+}
+
+async function dbClear() {
+  const db = await dbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).clear();
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(new Error('dbClear failed'));
+  });
+}
+
+/* ─ migrate from localStorage (v1 / v2) ─ */
+async function migrateLS() {
+  for (const key of ['coat_archive_v1','coat_archive_v2']) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr) || arr.length === 0) { localStorage.removeItem(key); continue; }
+      const existing = await dbGetAll();
+      if (existing.length > 0) { localStorage.removeItem(key); continue; }
+      const patched = arr.map((c,i) => ({
+        ...c,
+        itemType   : c.itemType    ?? 'coat',
+        manualOrder: c.manualOrder ?? (i * 1000),
+      }));
+      await dbPutAll(patched);
+      localStorage.removeItem(key);
+      toast(`旧データ ${patched.length}件を移行しました`, 'ok');
+    } catch(e) {
+      console.warn('migrate error', key, e);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 2: Image Compression  ─  target ≤ 80KB/photo
+═══════════════════════════════════════════════════════════ */
+const PHOTO_MAX_PX    = 1080;   // longest edge
+const PHOTO_TARGET_B  = 80 * 1024;  // 80 KB target
+const PHOTO_MIN_Q     = 0.28;
+const PHOTO_MAX_Q     = 0.82;
+
+async function compressPhoto(file) {
+  if (!(file instanceof File) && !(file instanceof Blob)) {
+    throw new Error('compressPhoto: 引数がFileではありません');
+  }
+  if (!file.type.startsWith('image/')) {
+    throw new Error('compressPhoto: 画像ファイルを選んでください（' + file.type + '）');
+  }
+  if (file.size === 0) {
+    throw new Error('compressPhoto: ファイルサイズが0です');
+  }
+
+  /* Step 1: DataURL として読み込む */
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => {
+      if (!e.target.result) reject(new Error('FileReader: 結果が空です'));
+      else resolve(e.target.result);
+    };
+    reader.onerror = () => reject(new Error('FileReader エラー: ' + reader.error?.message));
+    reader.readAsDataURL(file);
+  });
+
+  /* Step 2: Image デコード */
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image();
+    i.onload  = () => {
+      if (i.naturalWidth === 0 || i.naturalHeight === 0) {
+        reject(new Error('画像のデコードに失敗しました（サイズ0）'));
+      } else {
+        resolve(i);
+      }
+    };
+    i.onerror = () => reject(new Error('画像のデコードに失敗しました'));
+    i.src = dataUrl;
+  });
+
+  /* Step 3: Canvas にリサイズ */
+  let w = img.naturalWidth, h = img.naturalHeight;
+  const scale = Math.min(PHOTO_MAX_PX / Math.max(w, h), 1);
+  w = Math.max(1, Math.round(w * scale));
+  h = Math.max(1, Math.round(h * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D コンテキストの取得に失敗しました');
+  ctx.drawImage(img, 0, 0, w, h);
+
+  /* Step 4: 二分探索で品質を決める（目標 ≤ 80KB） */
+  let lo = PHOTO_MIN_Q, hi = PHOTO_MAX_Q, best = null;
+  for (let iter = 0; iter < 9; iter++) {
+    const mid  = (lo + hi) / 2;
+    const out  = canvas.toDataURL('image/jpeg', mid);
+    if (!out || out === 'data:,') throw new Error('Canvas.toDataURL が失敗しました');
+    const bytes = Math.round((out.length - 'data:image/jpeg;base64,'.length) * 3 / 4);
+    if (bytes <= PHOTO_TARGET_B) { best = out; lo = mid; }
+    else                         { hi = mid; }
+    if (hi - lo < 0.015) break;
+  }
+  /* フォールバック：最低品質でも大きい場合はそのまま使う */
+  if (!best) best = canvas.toDataURL('image/jpeg', PHOTO_MIN_Q);
+  if (!best || best === 'data:,') throw new Error('画像の圧縮に失敗しました');
+
+  return best;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 3: APP STATE
+═══════════════════════════════════════════════════════════ */
+const S = {
+  view       : 'col',
+  sortMode   : 'manual',
+  filterMode : 'all',
+  searchQ    : '',
+  wishQ      : '',
+  sortOpen   : false,
+  filterOpen : false,
+  editId     : null,
+  detailId   : null,
+  formType   : 'coat',    // 'coat' | 'wish'
+  formPhotos : [],        // base64[]
+  formDispPh : [],        // base64[]
+  formRating : 0,
+  formTex    : [],
+  formDisp   : false,
+  detailPhMode: 'coat',   // 'coat' | 'disp'
+  detailPhIdx : 0,
+  dragSrcId  : null,
+};
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 4: TOAST
+═══════════════════════════════════════════════════════════ */
+let _toastTimer = null;
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 5: NAVIGATION + HISTORY
+═══════════════════════════════════════════════════════════ */
+const VIEW_IDS = {
+  col      : 'view-col',
+  wish     : 'view-wish',
+  form     : 'view-form',
+  'form-new': 'view-form',
+  detail   : 'view-detail',
+  settings : 'view-settings',
+};
+const NAV_MAP = {
+  col:'col', wish:'wish', form:'form', 'form-new':'form', detail:'col', settings:'settings',
+};
+
+let formTracking = false, formBaseline = '', navSeq = 0, skipNextPop = false;
+const listScroll = {col:0,wish:0};
+let browseIds = [], browseOrigin = 'col';
+function beginFormTracking() { formBaseline=JSON.stringify(captureFormValues());formTracking=true; }
+function formIsDirty() { return formTracking && S.view==='form' && JSON.stringify(captureFormValues())!==formBaseline; }
+function confirmLeaveForm() {
+  if (formIsDirty() && !confirm('編集内容がまだ保存されていません。保存せずに移動しますか？')) return false;
+  formTracking=false;return true;
+}
+function restoreListPosition(id=S.view) {
+  if (id!=='col' && id!=='wish') return;
+  requestAnimationFrame(()=>{if(S.view===id)window.scrollTo(0,listScroll[id]||0);});
+}
+function showView(id, push=true) {
+  if (S.view==='form' && id!=='form' && !confirmLeaveForm()) return false;
+  if (S.view==='col'||S.view==='wish') listScroll[S.view]=window.scrollY;
+  document.getElementById('backup-modal')?.classList.remove('open');
+  S.view=id;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(VIEW_IDS[id]??'view-col')?.classList.add('active');
+  const tabKey=id==='detail'?browseOrigin:(id==='form'?'form-new':(NAV_MAP[id]??'col'));
+  document.querySelector(`.nav-btn[data-view="${tabKey}"]`)?.classList.add('active');
+  window.scrollTo(0,(id==='col'||id==='wish')?(listScroll[id]||0):0);
+  restoreListPosition(id);
+  if(push)history.pushState({view:id,detailId:S.detailId,seq:++navSeq,origin:browseOrigin},'');
+  return true;
+}
+window.addEventListener('beforeunload',event=>{if(formIsDirty()){event.preventDefault();event.returnValue='';}});
+window.addEventListener('popstate',async event=>{
+  if(skipNextPop){skipNextPop=false;return;}
+  const targetSeq=event.state?.seq??0;
+  if(!confirmLeaveForm()){
+    skipNextPop=true;history.go(navSeq-targetSeq);return;
+  }
+  navSeq=targetSeq;
+  if(document.getElementById('photo-lightbox').classList.contains('open')){
+    dismissPhotoLightbox();
+    if(event.state?.view==='detail'&&event.state.detailId===S.detailId)return;
+  }
+  const view=event.state?.view??'col';
+  if(view==='detail' && event.state?.detailId){
+    const item=(await dbGetAll()).find(x=>x.id===event.state.detailId);
+    if(item){
+      S.detailId=item.id;S.detailPhIdx=0;S.detailPhMode='coat';browseOrigin=event.state.origin||'col';
+      renderDetail(item);showView('detail',false);return;
+    }
+  }
+  const target=['col','wish','settings'].includes(view)?view:'col';
+  showView(target,false);await renderCol();await renderWish();restoreListPosition(target);
+});
+history.scrollRestoration='manual';
+history.replaceState({view:'col',seq:0},'');
+
+/* nav buttons */
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const v = btn.dataset.view;
+    if (v === 'form-new') {
+      openFormNew('coat');
+      return;
+    }
+    if(!showView(v))return;
+    if (v === 'col')      await renderCol();
+    if (v === 'wish')     await renderWish();
+    if (v === 'settings') calcStorage();
+    restoreListPosition(v);
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 6: SORT / FILTER / SEARCH
+═══════════════════════════════════════════════════════════ */
+const SORT_LABELS = {
+  manual:'手動順', newest:'新着↓', oldest:'古い↑',
+  'rating-d':'評価↓', 'rating-a':'評価↑',
+  'price-d':'価格↓', 'price-a':'価格↑', maker:'ブランド',
+};
+
+document.getElementById('btn-sort').addEventListener('click', () => {
+  S.sortOpen = !S.sortOpen;
+  document.getElementById('sort-panel').classList.toggle('open', S.sortOpen);
+  document.getElementById('btn-sort').classList.toggle('on', S.sortOpen);
+  document.getElementById('sort-pill-btn').classList.toggle('on', S.sortOpen);
+});
+document.getElementById('sort-pill-btn').addEventListener('click', () => {
+  document.getElementById('btn-sort').click();
+});
+document.querySelectorAll('.sort-chip').forEach(chip => {
+  chip.addEventListener('click', async () => {
+    S.sortMode = chip.dataset.sort;
+    document.querySelectorAll('.sort-chip').forEach(c => c.classList.remove('on'));
+    chip.classList.add('on');
+    document.getElementById('sort-label').textContent = SORT_LABELS[S.sortMode] ?? S.sortMode;
+    await renderCol();
+  });
+});
+
+document.getElementById('btn-filter').addEventListener('click', () => {
+  S.filterOpen = !S.filterOpen;
+  document.getElementById('filter-bar').classList.toggle('open', S.filterOpen);
+  document.getElementById('btn-filter').classList.toggle('on', S.filterOpen);
+});
+document.querySelectorAll('.fchip').forEach(chip => {
+  chip.addEventListener('click', async () => {
+    S.filterMode = chip.dataset.f;
+    document.querySelectorAll('.fchip').forEach(c => c.classList.remove('on'));
+    chip.classList.add('on');
+    await renderCol();
+  });
+});
+
+document.getElementById('search-inp').addEventListener('input', async e => {
+  S.searchQ = e.target.value.trim().toLowerCase();
+  await renderCol();
+});
+document.getElementById('wish-inp').addEventListener('input', async e => {
+  S.wishQ = e.target.value.trim().toLowerCase();
+  await renderWish();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 7: SORT LOGIC
+═══════════════════════════════════════════════════════════ */
+function applySort(arr, mode) {
+  const a = [...arr];
+  switch (mode) {
+    case 'manual'  : return a.sort((x,y) => (x.manualOrder ?? 0) - (y.manualOrder ?? 0));
+    case 'newest'  : return a.sort((x,y) => (y.createdAt   ?? 0) - (x.createdAt   ?? 0));
+    case 'oldest'  : return a.sort((x,y) => (x.createdAt   ?? 0) - (y.createdAt   ?? 0));
+    case 'rating-d': return a.sort((x,y) => (y.rating ?? 0) - (x.rating ?? 0));
+    case 'rating-a': return a.sort((x,y) => (x.rating ?? 0) - (y.rating ?? 0));
+    case 'price-d' : return a.sort((x,y) => (parseInt(y.price) || 0) - (parseInt(x.price) || 0));
+    case 'price-a' : return a.sort((x,y) => (parseInt(x.price) || 0) - (parseInt(y.price) || 0));
+    case 'maker'   : return a.sort((x,y) => (x.maker ?? '').localeCompare(y.maker ?? '', 'ja'));
+    default        : return a;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 8: RENDER COLLECTION
+═══════════════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function renderCol() {
+  let all;
+  try {
+    all = (await dbGetAll()).filter(c => c.itemType !== 'wish');
+  } catch(e) {
+    toast('データ読み込みエラー: ' + e.message, 'err');
+    return;
+  }
+
+  /* stats */
+  const active   = all.filter(c => !c.disposed);
+  const disposed = all.filter(c => c.disposed);
+  const rated    = all.filter(c => c.rating > 0);
+  const avgR     = rated.length ? (rated.reduce((s,c)=>s+c.rating,0)/rated.length).toFixed(1) : '—';
+  const totalP   = all.reduce((s,c) => s + (parseInt(c.price)||0), 0);
+  document.getElementById('s-total').textContent  = all.length;
+  document.getElementById('s-active').textContent = active.length;
+  document.getElementById('s-disp').textContent   = disposed.length;
+  document.getElementById('s-rating').textContent = avgR;
+  document.getElementById('s-price').textContent  =
+    totalP >= 10000 ? '¥' + Math.round(totalP/10000) + '万' : '¥' + totalP.toLocaleString();
+
+  /* filter */
+  let list = [...all];
+  if(S.searchQ)list=list.filter(c=>recordMatchesQuery(c,S.searchQ));
+  const f = S.filterMode;
+  if      (f === 'active')          list = list.filter(c => !c.disposed);
+  else if (f === 'disposed')        list = list.filter(c => c.disposed);
+  else if (f === 'fav5')            list = list.filter(c => c.rating >= 5);
+  else if (f === 'fav4')            list = list.filter(c => c.rating >= 4);
+  else if (f === 'has-recollection')list = list.filter(c => c.recollection?.trim());
+  else if (f === 'has-acqscene')    list = list.filter(c => c.acqScene?.trim());
+  else if (f && f !== 'all')        list = list.filter(c => c.type === f);
+
+  /* sort: disposed always sink to bottom (unless filter=disposed) */
+  let sorted;
+  if (f === 'disposed') {
+    sorted = applySort(list, S.sortMode);
+  } else {
+    sorted = [
+      ...applySort(list.filter(c => !c.disposed), S.sortMode),
+      ...applySort(list.filter(c =>  c.disposed), S.sortMode),
+    ];
+  }
+
+  const grid  = document.getElementById('card-list');
+  const empty = document.getElementById('col-empty');
+  if (sorted.length === 0) {
+    grid.innerHTML  = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML  = sorted.map(cardHTML).join('');
+    initDnD();
+  }
+}
+
+function cardHTML(c) {
+  const stars  = (c.rating ? '★'.repeat(c.rating) : '');
+  const thumb  = c.photos?.[0];
+  const tHtml  = thumb
+    ? `<div class="card-thumb"><img src="${safeImage(thumb)}" alt="" loading="lazy"></div>`
+    : `<div class="card-thumb"><span class="thumb-ph">🧥</span></div>`;
+  const l1 = esc(c.maker || '—');
+  const l2 = esc([c.type, c.color].filter(Boolean).join(' / ') || '（未設定）');
+  const dateDisp = !c.date ? '' : /^\d{4}-\d{2}/.test(c.date) ? c.date.slice(0,7) : c.date;
+  const l3 = esc([
+    c.size  ? 'SIZE ' + c.size : '',
+    dateDisp,
+    c.price ? '¥' + parseInt(c.price).toLocaleString() : '',
+  ].filter(Boolean).join('  ·  '));
+  const badge = c.disposed
+    ? `<span class="card-tag disp">手放し済</span>` : '';
+  const recBadge = c.recollection?.trim()
+    ? `<span class="card-tag" style="border-color:var(--accent);color:var(--accent);opacity:.7">追想</span>` : '';
+  return `
+  <div class="coat-card${c.disposed?' is-disposed':''}" data-id="${esc(c.id)}" onclick="openDetail(this.dataset.id)">
+    <div class="drag-handle" data-drag="${esc(c.id)}" onclick="event.stopPropagation()">⠿</div>
+    ${tHtml}
+    <div class="card-body">
+      <div class="card-l1">${l1}</div>
+      <div class="card-l2">${l2}</div>
+      <div class="card-l3">${l3}</div>
+    </div>
+    <div class="card-right">
+      ${stars ? `<span class="card-stars" style="font-size:8px;letter-spacing:0.5px;color:var(--gold);opacity:.8">${stars}</span>` : ''}
+      ${badge}${recBadge}
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 9: RENDER WISHLIST
+═══════════════════════════════════════════════════════════ */
+async function renderWish() {
+  let all;
+  try {
+    all = (await dbGetAll()).filter(c => c.itemType === 'wish');
+  } catch(e) {
+    toast('データ読み込みエラー: ' + e.message, 'err');
+    return;
+  }
+
+  /* badge */
+  document.getElementById('wish-badge').textContent = all.length;
+  document.getElementById('w-total').textContent    = all.length;
+  const tp = all.reduce((s,c) => s + (parseInt(c.price)||0), 0);
+  document.getElementById('w-price').textContent    = tp ? '¥' + tp.toLocaleString() : '¥0';
+
+  let list = S.wishQ
+    ? all.filter(c => recordMatchesQuery(c,S.wishQ))
+    : all;
+
+  const grid  = document.getElementById('wish-list');
+  const empty = document.getElementById('wish-empty');
+  if (list.length === 0) {
+    grid.innerHTML = ''; empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = list.map(c => {
+      const thumb = c.photos?.[0];
+      const tH    = thumb
+        ? `<div class="card-thumb"><img src="${safeImage(thumb)}" alt="" loading="lazy"></div>`
+        : `<div class="card-thumb" style="font-size:18px">🛍️</div>`;
+      const l1 = esc(c.maker || '—');
+      const l2 = esc([c.type,c.color].filter(Boolean).join(' / ') || '（未設定）');
+      const l3 = esc([c.size?'SIZE '+c.size:'', c.price?'¥'+parseInt(c.price).toLocaleString():''].filter(Boolean).join('  ·  '));
+      return `
+      <div class="coat-card is-wish" data-id="${esc(c.id)}" onclick="openDetail(this.dataset.id)">
+        <div style="width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:13px">♡</div>
+        ${tH}
+        <div class="card-body">
+          <div class="card-l1" style="color:var(--blue)">${l1}</div>
+          <div class="card-l2">${l2}</div>
+          <div class="card-l3">${l3}</div>
+        </div>
+        <div class="card-right"><span class="card-tag wish">WISH</span></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 10: DRAG AND DROP  (touch only for mobile)
+═══════════════════════════════════════════════════════════ */
+let _dragEl = null, _dragClone = null, _dragOffY = 0;
+
+function initDnD() {
+  document.querySelectorAll('#card-list .drag-handle').forEach(h => {
+    h.removeEventListener('touchstart', _onTouchStart);
+    h.addEventListener('touchstart', _onTouchStart, { passive: false });
+  });
+}
+
+function _onTouchStart(e) {
+  const card = e.currentTarget.closest('.coat-card');
+  if (!card) return;
+  e.preventDefault();
+  S.dragSrcId = card.dataset.id;
+  _dragEl     = card;
+  const touch = e.touches[0];
+  const rect  = card.getBoundingClientRect();
+  _dragOffY   = touch.clientY - rect.top;
+
+  _dragClone = card.cloneNode(true);
+  _dragClone.style.cssText = `
+    position:fixed;left:${rect.left}px;top:${rect.top}px;
+    width:${rect.width}px;z-index:9999;pointer-events:none;
+    opacity:.82;box-shadow:0 8px 30px rgba(0,0,0,.7);
+    border:1px solid var(--accent2);`;
+  document.body.appendChild(_dragClone);
+  card.classList.add('drag-ghost');
+
+  document.addEventListener('touchmove',  _onTouchMove,  { passive: false });
+  document.addEventListener('touchend',   _onTouchEnd);
+  document.addEventListener('touchcancel',_onTouchEnd);
+}
+
+function _onTouchMove(e) {
+  e.preventDefault();
+  if (!_dragClone) return;
+  const y = e.touches[0].clientY - _dragOffY;
+  _dragClone.style.top = y + 'px';
+  document.querySelectorAll('#card-list .coat-card').forEach(c => c.classList.remove('drag-over'));
+  const target = _cardAtY(e.touches[0].clientY);
+  if (target && target !== _dragEl) target.classList.add('drag-over');
+}
+
+function _onTouchEnd(e) {
+  document.removeEventListener('touchmove',   _onTouchMove);
+  document.removeEventListener('touchend',    _onTouchEnd);
+  document.removeEventListener('touchcancel', _onTouchEnd);
+  if (_dragClone) { _dragClone.remove(); _dragClone = null; }
+  if (_dragEl)    { _dragEl.classList.remove('drag-ghost'); _dragEl = null; }
+  document.querySelectorAll('#card-list .coat-card').forEach(c => c.classList.remove('drag-over'));
+
+  const touch  = e.changedTouches[0];
+  const target = _cardAtY(touch.clientY);
+  if (target && target.dataset.id && target.dataset.id !== S.dragSrcId) {
+    reorder(S.dragSrcId, target.dataset.id);
+  }
+  S.dragSrcId = null;
+}
+
+function _cardAtY(y) {
+  for (const card of document.querySelectorAll('#card-list .coat-card')) {
+    const r = card.getBoundingClientRect();
+    if (y >= r.top && y <= r.bottom) return card;
+  }
+  return null;
+}
+
+async function reorder(srcId, tgtId) {
+  try {
+    let all = await dbGetAll();
+    const writeBase = structuredClone(all);
+    const coats = all.filter(c => c.itemType !== 'wish');
+    const active  = applySort(coats.filter(c => !c.disposed), S.sortMode);
+    const disp    = applySort(coats.filter(c =>  c.disposed), S.sortMode);
+    const ordered = [...active, ...disp];
+    const si = ordered.findIndex(c => c.id === srcId);
+    const ti = ordered.findIndex(c => c.id === tgtId);
+    if (si === -1 || ti === -1) return;
+    ordered.splice(ti, 0, ordered.splice(si, 1)[0]);
+    ordered.forEach((c, i) => {
+      const item = all.find(d => d.id === c.id);
+      if (item) item.manualOrder = i * 1000;
+    });
+    S.sortMode = 'manual';
+    document.querySelectorAll('.sort-chip').forEach(c => c.classList.remove('on'));
+    const mc = document.querySelector('.sort-chip[data-sort="manual"]');
+    if (mc) mc.classList.add('on');
+    document.getElementById('sort-label').textContent = '手動順';
+    await dbPutAll(all, writeBase);
+    await renderCol();
+  } catch(e) {
+    toast('並び替えエラー: ' + e.message, 'err');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 11: FORM  ─  開く / リセット / 入力
+═══════════════════════════════════════════════════════════ */
+function openFormNew(type = 'coat') {
+  if(!confirmLeaveForm())return;
+  S.editId      = null;
+  S.formType    = type;
+  S.formPhotos  = [];
+  S.formDispPh  = [];
+  S.formRating  = 0;
+  S.formTex     = [];
+  S.formDisp    = false;
+  resetFormFields();
+  applyFormType(type);
+  document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+  showView('form');
+  beginFormTracking();
+}
+
+async function openFormEdit(id) {
+  if(!confirmLeaveForm())return;
+  try {
+    const all  = await dbGetAll();
+    const item = all.find(c => c.id === id);
+    if (!item) throw new Error('id=' + id + ' が見つかりません');
+
+    S.editId     = id;
+
+    resetFormFields();
+
+    S.formType   = item.itemType === 'wish' ? 'wish' : 'coat';
+    S.formPhotos = item.photos    ? [...item.photos]    : [];
+    S.formDispPh = item.dispPhotos? [...item.dispPhotos]: [];
+    S.formRating = item.rating    ?? 0;
+    S.formTex    = item.textures  ? [...item.textures]  : [];
+    S.formDisp   = item.disposed  ?? false;
+
+    applyFormType(S.formType);
+
+    /* populate */
+    const set = (id, v) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'SELECT' && v && !Array.from(el.options).some(o => o.value === String(v))) {
+        el.add(new Option(String(v), String(v)));
+      }
+      el.value = v ?? '';
+    };
+    set('f-maker',      item.maker);
+    set('f-type',       item.type);
+    set('f-style',      item.style);
+    set('f-color',      item.color);
+    set('f-size',       item.size);
+    set('f-date',       item.date);
+    set('f-price',      item.price);
+    set('f-loc',        item.locationName);
+    set('f-map',        item.mapUrl);
+    set('f-outer',      '');
+    set('f-inner',      '');
+
+    /* 種類：自由入力の復元 */
+    const knownTypes = ['ダウンコート','チェスターコート','ノーカラーコート','ステンカラーコート',
+      'ダッフルコート','ダブルコート','ピーコート','ダウンジャケット','中綿コート','アンゴラコート'];
+    if (item.type && !knownTypes.includes(item.type)) {
+      document.getElementById('f-type').value     = '自由入力';
+      document.getElementById('f-type-txt').value = item.type;
+      document.getElementById('f-type-txt').style.display = 'block';
+    } else { set('f-type', item.type); }
+
+    set('f-feel-note',  item.feelNote);
+    set('f-memo',       item.memo);
+    set('f-disp-date',  item.dispDate);
+    set('f-disp-note',  item.dispNote);
+    /* new fields v3 */
+    set('f-acq-scene',             item.acqScene);
+    set('f-trash-type',            item.trashType);
+    set('f-companions',            item.companions);
+    set('f-life-trace',            item.lifeTrace);
+    set('f-acq-reason',            item.acqReason);
+    set('f-release-reason',        item.releaseReason);
+    set('f-release-scene',         item.releaseScene);
+    set('f-last-note',             item.lastNote);
+    set('f-recollection',          item.recollection);
+    set('f-remaining-impression',  item.remainingImpression);
+    set('f-comparison-note',       item.comparisonNote);
+
+    /* 入手経路：自由入力の復元 */
+    const knownAcq = ['燃えるゴミ','衣類ゴミ','回収BOX','メルカリ','ヤフオク'];
+    if (item.acqMethod && !knownAcq.includes(item.acqMethod)) {
+      document.getElementById('f-acq-method').value     = '自由入力';
+      document.getElementById('f-acq-method-txt').value = item.acqMethod;
+      document.getElementById('f-acq-method-txt').style.display = 'block';
+    } else {
+      set('f-acq-method', item.acqMethod);
+    }
+
+    /* 手放し方法：自由入力の復元 */
+    const knownDisp = ['燃えるゴミ','資源ゴミ','資源回収BOX','譲渡','売却'];
+    if (item.dispMethod && !knownDisp.includes(item.dispMethod)) {
+      document.getElementById('f-disp-method').value     = '自由入力';
+      document.getElementById('f-disp-method-txt').value = item.dispMethod;
+      document.getElementById('f-disp-method-txt').style.display = 'block';
+    } else {
+      if (item.dispMethod) document.getElementById('f-disp-method').value = item.dispMethod;
+    }
+
+    /* outer/inner material */
+    const knownO = ['ポリエステル','ナイロン','アンゴラ','ウール'];
+    const knownI = ['ポリエステル','ナイロン'];
+    if (item.outerMat && !knownO.includes(item.outerMat)) {
+      document.getElementById('f-outer').value     = '自由入力';
+      document.getElementById('f-outer-txt').value = item.outerMat;
+      document.getElementById('f-outer-txt').style.display = 'block';
+    } else { set('f-outer', item.outerMat); }
+    if (item.innerMat && !knownI.includes(item.innerMat)) {
+      document.getElementById('f-inner').value     = '自由入力';
+      document.getElementById('f-inner-txt').value = item.innerMat;
+      document.getElementById('f-inner-txt').style.display = 'block';
+    } else { set('f-inner', item.innerMat); }
+
+    setStars(S.formRating);
+    setTextures(S.formTex);
+    setDispToggle(S.formDisp);
+    renderPhotoGrid('coat');
+    renderPhotoGrid('disp');
+
+    S.editInitialValues = captureFormValues();
+    S.editOriginal = structuredClone(item);
+    if (item.mapUrl) showMapHint(item.locationName || item.mapUrl, item.mapUrl);
+
+    showView('form');
+    beginFormTracking();
+  } catch(e) {
+    toast('編集フォームを開けませんでした: ' + e.message, 'err');
+  }
+}
+
+function resetFormFields() {
+  ['f-maker','f-type','f-type-txt','f-style','f-color','f-size','f-date','f-price',
+   'f-loc','f-map','f-outer','f-outer-txt','f-inner','f-inner-txt',
+   'f-feel-note','f-memo','f-disp-date','f-disp-method','f-disp-note',
+   'f-acq-method','f-acq-method-txt','f-acq-scene','f-trash-type',
+   'f-companions','f-life-trace','f-acq-reason',
+   'f-release-reason','f-release-scene','f-last-note',
+   'f-recollection','f-remaining-impression','f-comparison-note',
+   'f-disp-method-txt']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = '';
+    });
+  ['f-type-txt','f-outer-txt','f-inner-txt','f-acq-method-txt','f-disp-method-txt']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  document.getElementById('map-hint').classList.remove('show');
+  setStars(0);
+  setTextures([]);
+  setDispToggle(false);
+  renderPhotoGrid('coat');
+  renderPhotoGrid('disp');
+}
+
+function applyFormType(type) {
+  S.formType = type;
+  const isWish = type === 'wish';
+  document.getElementById('type-coat').className = 'type-btn' + (isWish ? '' : ' on-coat');
+  document.getElementById('type-wish').className = 'type-btn' + (isWish ? ' on-wish' : '');
+  document.getElementById('fs-feel').style.display  = isWish ? 'none' : '';
+  document.getElementById('fs-disp').style.display  = isWish ? 'none' : '';
+  document.getElementById('fs-recollection').style.display = isWish ? 'none' : '';
+  document.getElementById('acq-title').textContent  = isWish ? '予算・参考情報' : '発見 / 入手記録';
+  document.getElementById('date-lbl').textContent   = isWish ? '見つけた日'     : '入手日';
+  document.getElementById('price-lbl').textContent  = isWish ? '希望価格（円）'  : '価格（円）';
+  document.getElementById('memo-title').textContent = isWish ? '記録'           : '所感・記録';
+  document.getElementById('memo-lbl').textContent   = isWish ? 'メモ・気になる点': 'このコートとの記録';
+  document.getElementById('form-save').className    = 'btn ' + (isWish ? 'btn-blue' : 'btn-primary');
+}
+
+window.setType = function(t) { applyFormType(t); };
+
+/* Stars */
+function setStars(r) {
+  S.formRating = r;
+  document.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('lit', parseInt(b.dataset.v) <= r);
+  });
+}
+document.querySelectorAll('.star-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    const v = parseInt(b.dataset.v);
+    setStars(S.formRating === v ? 0 : v);
+  });
+});
+
+/* Textures */
+function setTextures(arr) {
+  S.formTex = [...arr];
+  document.querySelectorAll('.pill-btn[data-v]').forEach(b => {
+    b.classList.toggle('on', arr.includes(b.dataset.v));
+  });
+}
+document.querySelectorAll('.pill-btn[data-v]').forEach(b => {
+  b.addEventListener('click', () => {
+    const v = b.dataset.v;
+    S.formTex = S.formTex.includes(v)
+      ? S.formTex.filter(t => t !== v)
+      : [...S.formTex, v];
+    setTextures(S.formTex);
+  });
+});
+
+/* Dispose toggle */
+function setDispToggle(v) {
+  S.formDisp = v;
+  document.getElementById('disp-toggle').classList.toggle('on', v);
+  document.getElementById('disp-body').classList.toggle('open', v);
+}
+document.getElementById('disp-toggle').addEventListener('click', () => {
+  setDispToggle(!S.formDisp);
+});
+
+/* Map preview */
+document.getElementById('map-preview-btn').addEventListener('click', () => {
+  const url  = document.getElementById('f-map').value.trim();
+  const name = document.getElementById('f-loc').value.trim() || url;
+  if (url) showMapHint(name, url);
+  else document.getElementById('map-hint').classList.remove('show');
+});
+function showMapHint(name, url) {
+  const el = document.getElementById('map-hint');
+  el.textContent = '📍 ' + name;
+  el.classList.add('show');
+  el.onclick = () => { const safe = safeMapURL(url); if (safe) window.open(safe, '_blank', 'noopener,noreferrer'); else toast('安全なHTTP/HTTPSのURLではありません', 'err'); };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 12: PHOTO GRIDS
+═══════════════════════════════════════════════════════════ */
+function renderPhotoGrid(mode) {
+  /* mode: 'coat' | 'disp' */
+  const photos  = mode === 'coat' ? S.formPhotos : S.formDispPh;
+  const gridId  = mode === 'coat' ? 'coat-photo-grid' : 'disp-photo-grid';
+  const cntId   = mode === 'coat' ? 'coat-photo-cnt'  : 'disp-photo-cnt';
+  const inputId = mode === 'coat' ? 'fi-coat'          : 'fi-disp';
+  const count   = photos.length;
+
+  document.getElementById(cntId).textContent = ` ${count}/20`;
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+
+  let html = photos.map((src, i) => `
+    <div class="photo-slot">
+      <img src="${safeImage(src)}" alt="" loading="lazy">
+      <div class="photo-del" onclick="removePhoto('${mode}',${i})">×</div>
+    </div>`).join('');
+  if (count < 20) {
+    html += `<div class="photo-slot" onclick="document.getElementById('${inputId}').click()">
+      <span class="add-ic">＋</span></div>`;
+  }
+  grid.innerHTML = html;
+}
+
+window.removePhoto = function(mode, idx) {
+  if (mode === 'coat') S.formPhotos.splice(idx, 1);
+  else                 S.formDispPh.splice(idx, 1);
+  renderPhotoGrid(mode);
+};
+
+async function handlePhotoInput(mode, files) {
+  if (!files || files.length === 0) return;
+  const arr      = mode === 'coat' ? S.formPhotos : S.formDispPh;
+  const remain   = Math.max(0, 20 - arr.length);
+  const toProcess = Array.from(files).slice(0, remain);
+  if (toProcess.length === 0) { toast('写真は最大20枚です', 'info'); return; }
+
+  toast(`写真を圧縮中… (${toProcess.length}枚)`, 'info');
+  let ok = 0, fail = 0;
+  for (const f of toProcess) {
+    try {
+      const compressed = await compressPhoto(f);
+      arr.push(compressed);
+      ok++;
+    } catch(e) {
+      fail++;
+      console.warn('compressPhoto error', f.name, e);
+      toast('⚠ ' + (f.name ?? '画像') + ': ' + e.message, 'err');
+    }
+  }
+  renderPhotoGrid(mode);
+  if (fail === 0) {
+    toast(`${ok}枚を追加しました ✓`, 'ok');
+  } else {
+    toast(`${ok}枚成功 / ${fail}枚失敗`, fail > 0 ? 'err' : 'ok');
+  }
+  if (files.length > remain) {
+    toast(`${files.length - remain}枚はスキップしました（最大20枚）`, 'info');
+  }
+}
+
+document.getElementById('fi-coat').addEventListener('change', async function() {
+  await handlePhotoInput('coat', this.files);
+  this.value = '';
+});
+document.getElementById('fi-disp').addEventListener('change', async function() {
+  await handlePhotoInput('disp', this.files);
+  this.value = '';
+});
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 13: SAVE FORM
+═══════════════════════════════════════════════════════════ */
+document.getElementById('form-cancel').addEventListener('click', () => history.back());
+
+document.getElementById('form-save').addEventListener('click', async () => {
+  try {
+    const val = id => (document.getElementById(id)?.value ?? '').trim();
+
+    /* 種類の解決 */
+    const typeSel = val('f-type');
+    const typeTxtV = val('f-type-txt');
+    const resolvedType = typeSel === '自由入力' ? (typeTxtV || '') : typeSel;
+
+    /* 表地素材の解決 */
+    const outerSel = val('f-outer');
+    const outerTxtV = val('f-outer-txt');
+    const resolvedOuter = outerSel === '自由入力' ? (outerTxtV || '') : outerSel;
+
+    /* 裏地素材の解決 */
+    const innerSel = val('f-inner');
+    const innerTxtV = val('f-inner-txt');
+    const resolvedInner = innerSel === '自由入力' ? (innerTxtV || '') : innerSel;
+
+    /* 入手経路の解決 */
+    const acqSel = val('f-acq-method');
+    const acqTxtV = val('f-acq-method-txt');
+    const resolvedAcqMethod = acqSel === '自由入力' ? (acqTxtV || '') : acqSel;
+
+    /* 手放し方法の解決 */
+    const dispMethodSel = val('f-disp-method');
+    const dispMethodTxtV = val('f-disp-method-txt');
+    const resolvedDispMethod = dispMethodSel === '自由入力' ? (dispMethodTxtV || '') : dispMethodSel;
+
+    let all = await dbGetAll();
+    const writeBase = structuredClone(all);
+    const existing = S.editId ? all.find(c => c.id === S.editId) : null;
+
+    const item = {
+      ...existing,
+      id          : S.editId ?? genId(),
+      itemType    : S.formType === 'wish' ? 'wish' : 'coat',
+      createdAt   : existing ? existing.createdAt : Date.now(),
+      updatedAt   : Date.now(),
+      manualOrder : existing ? existing.manualOrder : (all.length * 1000),
+      maker       : val('f-maker'),
+      type        : resolvedType,
+      style       : val('f-style'),
+      color       : val('f-color'),
+      size        : val('f-size'),
+      outerMat    : resolvedOuter,
+      innerMat    : resolvedInner,
+      date        : val('f-date'),
+      price       : val('f-price'),
+      locationName: val('f-loc'),
+      mapUrl      : val('f-map'),
+      rating      : S.formRating,
+      textures    : [...S.formTex],
+      feelNote    : val('f-feel-note'),
+      photos      : [...S.formPhotos],
+      memo        : val('f-memo'),
+      /* v3: 発見/入手 */
+      acqMethod   : resolvedAcqMethod,
+      acqScene    : val('f-acq-scene'),
+      trashType   : val('f-trash-type'),
+      companions  : val('f-companions'),
+      lifeTrace   : val('f-life-trace'),
+      acqReason   : val('f-acq-reason'),
+      /* v3: 手放し */
+      disposed    : S.formType === 'wish' ? false : S.formDisp,
+      dispDate    : S.formDisp ? val('f-disp-date')       : (existing?.dispDate    ?? ''),
+      dispMethod  : S.formDisp ? resolvedDispMethod        : (existing?.dispMethod  ?? ''),
+      dispNote    : S.formDisp ? val('f-disp-note')       : (existing?.dispNote    ?? ''),
+      dispPhotos  : S.formDisp ? [...S.formDispPh]        : (existing?.dispPhotos  ?? []),
+      releaseReason : val('f-release-reason'),
+      releaseScene  : val('f-release-scene'),
+      lastNote      : val('f-last-note'),
+      /* v3: 追想 */
+      recollection         : val('f-recollection'),
+      remainingImpression  : val('f-remaining-impression'),
+      comparisonNote       : val('f-comparison-note'),
+    };
+
+    if (existing && S.editOriginal && !sameJSON(existing, S.editOriginal)) {
+      throw new Error('編集中にこの記録が変更されました。再度開き直してください');
+    }
+    if (existing) {
+      for (const key of ['createdAt','manualOrder']) if (!Object.hasOwn(existing,key)) delete item[key];
+    }
+    if (existing && S.editInitialValues) {
+      const now = captureFormValues();
+      for (const [key, inputs] of Object.entries(FORM_FIELDS)) {
+        if (inputs.every(id => sameJSON(now[id], S.editInitialValues[id]))) {
+          if (Object.hasOwn(existing, key)) item[key] = existing[key];
+          else delete item[key];
+        }
+      }
+    }
+    if (S.editId) {
+      const idx = all.findIndex(c => c.id === S.editId);
+      if (idx === -1) throw new Error('編集対象が見つかりません: id=' + S.editId);
+      all[idx] = item;
+    } else {
+      all.unshift(item);
+    }
+
+    if (existing) await saveArchiveBackup(writeBase, '編集保存前');
+    await dbPutAll(all, writeBase);
+    toast(S.editId ? '更新しました ✓' : '追加しました ✓', 'ok');
+    S.editId = null;
+    formTracking=false;
+    await renderCol();
+    await renderWish();
+    const target = item.itemType === 'wish' ? 'wish' : 'col';
+    showView(target);
+  } catch(e) {
+    toast('保存エラー: ' + e.message, 'err');
+    console.error('saveForm error', e);
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 14: DETAIL VIEW
+═══════════════════════════════════════════════════════════ */
+window.openDetail = async function(id, options = {}) {
+  if(!confirmLeaveForm())return;
+  if(S.view==='col'||S.view==='wish'){
+    browseOrigin=S.view;
+    browseIds=Array.from(document.querySelectorAll(S.view==='wish'?'#wish-list .coat-card':'#card-list .coat-card')).map(el=>el.dataset.id);
+  }
+  try {
+    const all  = await dbGetAll();
+    const item = all.find(c => c.id === id);
+    if (!item) throw new Error('id=' + id + ' が見つかりません');
+    S.detailId    = id;
+    S.detailPhMode= 'coat';
+    S.detailPhIdx = 0;
+    renderDetail(item);
+    showView('detail', !options.replace);
+    if(options.replace)history.replaceState({view:'detail',detailId:id,seq:navSeq,origin:browseOrigin},'');
+  } catch(e) {
+    toast('詳細を開けませんでした: ' + e.message, 'err');
+  }
+};
+
+let detailPhotoViewer = null;
+
+function renderDetail(item) {
+  const isWish   = item.itemType === 'wish';
+  const photos   = item.photos    ?? [];
+  const dPhotos  = item.dispPhotos ?? [];
+  const active   = S.detailPhMode === 'disp' ? dPhotos : photos;
+  S.detailPhIdx = Math.max(0, Math.min(S.detailPhIdx, active.length - 1));
+
+  const heroHtml = active.length
+    ? `<div class="photo-track">
+         <img class="photo-before" alt="" aria-hidden="true" draggable="false">
+         <img class="photo-current" src="${safeImage(active[S.detailPhIdx])}" alt="${S.detailPhMode === 'disp' ? '手放し時写真' : 'コート写真'} ${S.detailPhIdx+1}" draggable="false">
+         <img class="photo-after" alt="" aria-hidden="true" draggable="false">
+       </div>
+       <span class="photo-count" aria-live="polite" aria-atomic="true">${S.detailPhIdx+1} / ${active.length}</span>
+       ${active.length > 1 ? '<button type="button" class="photo-step prev" aria-label="前の写真">‹</button><button type="button" class="photo-step next" aria-label="次の写真">›</button>' : ''}`
+    : `<div class="hero-ph">${isWish ? '🛍️' : '🧥'}</div>`;
+
+  let tabBar = '';
+  if (photos.length > 0 || dPhotos.length > 0) {
+    tabBar = `<div class="photo-mode-bar">
+      <button class="pm-btn${S.detailPhMode==='coat'?' on':''}" onclick="switchPhMode('coat')">写真 (${photos.length})</button>
+      ${dPhotos.length > 0
+        ? `<button class="pm-btn${S.detailPhMode==='disp'?' on':''}" onclick="switchPhMode('disp')">手放し時 (${dPhotos.length})</button>`
+        : ''}
+    </div>`;
+  }
+  const strip = active.length > 1
+    ? `<div class="thumb-strip">${active.map((s,i) =>
+        `<img class="t-thumb${i===S.detailPhIdx?' on':''}" src="${safeImage(s)}" onclick="pickPhoto(${i})" alt="" loading="lazy">`
+      ).join('')}</div>` : '';
+
+  /* helpers */
+  const e = esc;
+  const row = (lbl, val) => val
+    ? `<div class="d-field"><div class="d-lbl">${lbl}</div><div class="d-val">${e(val)}</div></div>` : '';
+  const longText = (lbl, val) => val
+    ? `<div style="margin-bottom:14px"><div class="d-sec-t" style="margin-bottom:6px">${lbl}</div>
+       <div class="d-memo">${e(val)}</div></div>` : '';
+  const sec = (title, content) =>
+    `<div class="d-chapter">
+       <div class="d-chapter-title">${title}</div>
+       <div class="d-chapter-body">${content}</div>
+     </div>`;
+
+  const stars = item.rating
+    ? `<span style="font-size:14px;color:var(--gold);letter-spacing:2px;opacity:.85">${'★'.repeat(item.rating)}</span>` : '';
+
+  /* 状態バッジ */
+  const statusBadge = item.disposed
+    ? `<div class="d-release-badge">手放し記録あり</div>`
+    : (!isWish ? `<div class="d-active-badge">✦ 収蔵中</div>` : '');
+
+  /* ── Chapter 1: 基本情報 ── */
+  const ch1 = sec('I.  基本情報', `
+    <div class="d-brand">${e(item.maker||'—')}</div>
+    <div class="d-title">${e([item.type,item.style].filter(Boolean).join(' / ')||'No Name')}</div>
+    ${stars ? `<div style="margin-bottom:10px">${stars}</div>` : ''}
+    ${statusBadge}
+    <div class="d-grid">
+      ${row('色',      item.color)}
+      ${row('サイズ',  item.size)}
+      ${row('表地',    item.outerMat)}
+      ${row('裏地',    item.innerMat)}
+      ${row('入手日',  item.date)}
+      ${row('価格',    item.price ? '¥' + parseInt(item.price).toLocaleString() : '')}
+    </div>
+    ${(item.textures?.length)
+      ? `<div class="d-tags">${item.textures.map(t=>`<span class="d-tag">${e(t)}</span>`).join('')}</div>` : ''}
+  `);
+
+  /* ── Chapter 2: 発見 / 入手記録 ── */
+  const hasAcq = item.locationName || item.acqMethod || item.acqScene || item.trashType
+    || item.companions || item.lifeTrace || item.acqReason || item.mapUrl;
+  const ch2 = hasAcq ? sec('II.  発見 / 入手記録', `
+    ${item.acqMethod ? `<div class="d-acq-method">${e(item.acqMethod)}</div>` : ''}
+    ${item.mapUrl
+      ? `<a class="d-map-btn" href="${esc(safeMapURL(item.mapUrl))}" target="_blank" rel="noopener">📍 ${e(item.locationName||'マップを開く')}</a>`
+      : (item.locationName ? `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px">📍 ${e(item.locationName)}</div>` : '')}
+    ${longText('発見時状況',  item.acqScene)}
+    ${item.trashType   ? `<div style="margin-bottom:8px"><span class="d-tag">${e(item.trashType)}</span></div>` : ''}
+    ${longText('一緒にあったもの', item.companions)}
+    ${longText('生活の気配',  item.lifeTrace)}
+    ${longText('回収 / 入手理由', item.acqReason)}
+  `) : '';
+
+  /* ── Chapter 3: 収蔵中の所感 ── */
+  const hasArchive = item.feelNote || item.memo;
+  const ch3 = hasArchive ? sec('III.  収蔵中の所感', `
+    ${longText('所感', item.feelNote)}
+    ${longText('記録', item.memo)}
+  `) : '';
+
+  /* ── Chapter 4: 手放し記録 ── */
+  const ch4 = item.disposed ? sec('IV.  手放し記録', `
+    <div class="d-release-scene-block">
+      <div class="d-grid">
+        ${row('手放し日',    item.dispDate)}
+        ${row('手放し方法',  item.dispMethod)}
+      </div>
+      ${item.dispNote      ? `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px">📍 ${e(item.dispNote)}</div>` : ''}
+      ${longText('手放し理由',  item.releaseReason)}
+      ${longText('手放し場面',  item.releaseScene)}
+      ${longText('最後の所感',  item.lastNote)}
+    </div>
+  `) : '';
+
+  /* ── Chapter 5: 追想 ── */
+  const hasRecollection = item.recollection || item.remainingImpression || item.comparisonNote;
+  const ch5 = hasRecollection ? sec('V.  追想', `
+    ${longText('後から思い出すこと', item.recollection)}
+    ${longText('今も残る印象',       item.remainingImpression)}
+    ${item.comparisonNote ? `<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:4px">— ${e(item.comparisonNote)}</div>` : ''}
+  `) : '';
+
+  /* ── Chapter 6: 画像資料 ── */
+  const ch6 = (photos.length > 0 || dPhotos.length > 0) ? sec('VI.  画像資料', `
+    ${tabBar}${strip}
+    <div style="font-size:10px;color:var(--text-muted);margin-top:6px;letter-spacing:.07em">
+      コート ${photos.length}枚${dPhotos.length > 0 ? ` · 手放し時 ${dPhotos.length}枚` : ''}
+    </div>
+  `) : '';
+
+  document.getElementById('detail-wrap').innerHTML = `
+    ${renderBrowseControls()}
+    <div class="detail-hero" role="group" aria-label="写真ビューアー。写真をタップすると拡大" tabindex="0">${heroHtml}</div>
+    <div class="gallery-controls">${tabBar}${strip}${active.length?'<p class="gallery-hint">写真をタップして拡大・指で広げて細部を見る</p>':''}</div>
+    <div class="detail-body">
+      <div class="utility-row"><button class="s-btn" id="export-one">この一着を書き出す</button></div>
+      ${isWish ? '<div class="d-wish-banner">♡ ほしいコートリスト</div>' : ''}
+      ${ch1}${ch2}${ch3}${ch4}${ch5}
+    </div>`;
+
+  detailPhotoViewer = bindDetailPhotoViewer(document.getElementById('detail-wrap'), active);
+  document.getElementById('browse-prev').addEventListener('click',()=>browseRecord(-1).catch(e=>toast(e.message,'err')));
+  document.getElementById('browse-next').addEventListener('click',()=>browseRecord(1).catch(e=>toast(e.message,'err')));
+  document.getElementById('export-one').addEventListener('click',async()=>{
+    try{const latest=(await dbGetAll()).find(x=>x.id===item.id);if(!latest)throw new Error('記録が見つかりません');downloadArchive([latest],'coat-archive-item');toast('この一着の記録と写真を書き出しました','ok');}catch(e){toast(e.message,'err');}
+  });
+
+  /* action bar */
+  const bar = document.getElementById('detail-bar');
+  if (isWish) {
+    bar.innerHTML = `
+      <button class="btn btn-ghost" onclick="history.back()">← 戻る</button>
+      <button class="btn btn-blue"  id="promote-btn">収蔵に移す</button>
+      <button class="btn btn-red"   id="del-open-btn">削除</button>`;
+    document.getElementById('promote-btn').addEventListener('click', promoteWish);
+  } else {
+    bar.innerHTML = `
+      <button class="btn btn-ghost" onclick="history.back()">← 戻る</button>
+      <button class="btn btn-ghost" id="edit-btn">編集</button>
+      <button class="btn btn-red"   id="del-open-btn">削除</button>`;
+    document.getElementById('edit-btn').addEventListener('click', () => openFormEdit(S.detailId));
+  }
+  document.getElementById('del-open-btn').addEventListener('click', () => {
+    document.getElementById('del-modal').classList.add('open');
+  });
+}
+
+window.switchPhMode = async function(mode) {
+  try {
+    const all  = await dbGetAll();
+    const item = all.find(c => c.id === S.detailId);
+    if (!item) throw new Error('id=' + S.detailId);
+    S.detailPhMode = mode;
+    S.detailPhIdx  = 0;
+    renderDetail(item);
+  } catch(e) { toast('エラー: ' + e.message, 'err'); }
+};
+
+// The viewer only reads its photo list; switching photos never saves record data.
+function bindDetailPhotoViewer(root, photos) {
+  const hero = root.querySelector('.detail-hero');
+  const track = hero.querySelector('.photo-track');
+  const image = hero.querySelector('.photo-current');
+  const before = hero.querySelector('.photo-before');
+  const after = hero.querySelector('.photo-after');
+  const count = hero.querySelector('.photo-count');
+  const prev = hero.querySelector('.photo-step.prev');
+  const next = hero.querySelector('.photo-step.next');
+  const thumbs = Array.from(root.querySelectorAll('.t-thumb'));
+  const modeLabel = S.detailPhMode === 'disp' ? '手放し時写真' : 'コート写真';
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let current = S.detailPhIdx, moving = false, gesture = null, suppressClickUntil = 0;
+  hero.addEventListener('click',event=>{
+    if(event.target.closest('button')||Date.now()<suppressClickUntil||moving||!photos.length)return;
+    openPhotoLightbox(photos,current);
+  });
+  hero.addEventListener('keydown',event=>{
+    if(event.target===hero&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openPhotoLightbox(photos,current);}
+  });
+  const setImage = (node, idx) => {
+    if (!node) return;
+    const exists = idx >= 0 && idx < photos.length;
+    node.style.visibility = exists ? 'visible' : 'hidden';
+    node.src = safeImage(photos[exists ? idx : current]);
+  };
+  const paint = (revealThumb = false) => {
+    if (!track || !image || !photos.length) return;
+    track.style.transition = 'none';
+    track.style.transform = 'translate3d(0px,0,0)';
+    setImage(before, current - 1); setImage(image, current); setImage(after, current + 1);
+    image.alt = `${modeLabel} ${current+1}`;
+    if (count) count.textContent = `${current+1} / ${photos.length}`;
+    if (prev) prev.disabled = current === 0;
+    if (next) next.disabled = current === photos.length - 1;
+    thumbs.forEach((thumb, i) => {
+      thumb.classList.toggle('on', i === current);
+      thumb.setAttribute('aria-current', i === current ? 'true' : 'false');
+    });
+    const thumb = thumbs[current];
+    if (revealThumb && thumb?.parentElement) {
+      const strip = thumb.parentElement;
+      const left = thumb.offsetLeft - strip.offsetLeft;
+      if (left < strip.scrollLeft) strip.scrollLeft = left;
+      else if (left + thumb.offsetWidth > strip.scrollLeft + strip.clientWidth)
+        strip.scrollLeft = left + thumb.offsetWidth - strip.clientWidth;
+    }
+  };
+  const animate = (destination, finish) => {
+    moving = true;
+    if (reducedMotion) { finish(); moving = false; return; }
+    // Commit the dragged position before starting the easing transition.
+    void track.offsetWidth;
+    let timer;
+    const done = event => {
+      if (event && (event.target !== track || event.propertyName !== 'transform')) return;
+      track.removeEventListener('transitionend', done);
+      clearTimeout(timer);
+      finish(); moving = false;
+    };
+    track.addEventListener('transitionend', done);
+    track.style.transition = 'transform 360ms cubic-bezier(.22,.68,0,1)';
+    track.style.transform = destination;
+    timer = setTimeout(() => done(), 440);
+  };
+  const show = (idx, revealThumb = false) => {
+    if (moving || !image || !Number.isInteger(idx) || idx < 0 || idx >= photos.length) return;
+    gesture = null;
+    if (idx === current) {
+      if (track.style.transform !== 'translate3d(0px,0,0)')
+        animate('translate3d(0px,0,0)', () => paint());
+      return;
+    }
+    const forward = idx > current;
+    setImage(forward ? after : before, idx);
+    S.detailPhIdx = idx;
+    animate(`translate3d(${forward ? '-100%' : '100%'},0,0)`, () => {
+      current = idx;
+      paint(revealThumb);
+    });
+  };
+  const resetGesture = () => {
+    if (!gesture) return;
+    gesture = null;
+    show(current);
+  };
+  paint();
+  if (photos.length > 1) {
+    prev.addEventListener('click', () => show(current - 1, true));
+    next.addEventListener('click', () => show(current + 1, true));
+    hero.addEventListener('keydown', event => {
+      if (event.target !== hero) return;
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        show(current + (event.key === 'ArrowRight' ? 1 : -1), true);
+      }
+    });
+    hero.addEventListener('pointerdown', event => {
+      if (!event.isPrimary) { resetGesture(); return; }
+      if (moving || event.button !== 0 || event.target.closest('button')) return;
+      gesture = {id:event.pointerId, x:event.clientX, y:event.clientY, axis:null};
+      hero.setPointerCapture(event.pointerId);
+    });
+    hero.addEventListener('pointermove', event => {
+      if (!gesture || gesture.id !== event.pointerId) return;
+      let dx = event.clientX - gesture.x;
+      const dy = event.clientY - gesture.y;
+      if (!gesture.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 12) {
+        if (Math.abs(dy) >= Math.abs(dx)) gesture.axis = 'vertical';
+        else if (Math.abs(dx) > Math.abs(dy) * 1.4) gesture.axis = 'horizontal';
+      }
+      if(Math.max(Math.abs(dx),Math.abs(dy))>12)suppressClickUntil=Date.now()+500;
+      if (gesture.axis !== 'horizontal') return;
+      if ((current === 0 && dx > 0) || (current === photos.length - 1 && dx < 0)) dx *= .25;
+      const limit = Math.max(1, hero.clientWidth) * .95;
+      dx = Math.max(-limit, Math.min(limit, dx));
+      track.style.transition = 'none';
+      track.style.transform = `translate3d(${dx}px,0,0)`;
+    });
+    hero.addEventListener('pointerup', event => {
+      if (!gesture || gesture.id !== event.pointerId) return;
+      const start = gesture;
+      gesture = null;
+      const dx = event.clientX - start.x, dy = event.clientY - start.y;
+      const target = current + (dx < 0 ? 1 : -1);
+      if (start.axis !== 'vertical' && Math.abs(dx) >= 44 && Math.abs(dx) > Math.abs(dy) * 1.4
+          && target >= 0 && target < photos.length) show(target, true);
+      else show(current);
+    });
+    hero.addEventListener('pointercancel', resetGesture);
+    hero.addEventListener('lostpointercapture', resetGesture);
+  }
+  return show;
+}
+
+window.pickPhoto = function(idx) {
+  if (detailPhotoViewer) detailPhotoViewer(idx);
+};
+
+async function promoteWish() {
+  try {
+    let all  = await dbGetAll();
+    const writeBase = structuredClone(all);
+    const item = all.find(c => c.id === S.detailId);
+    if (!item) throw new Error('id=' + S.detailId);
+    item.itemType    = 'coat';
+    item.manualOrder = all.filter(c => c.itemType !== 'wish').length * 1000;
+    await dbPutAll(all, writeBase);
+    toast('収蔵に移しました ✓', 'ok');
+    await renderCol();
+    await renderWish();
+    showView('col');
+  } catch(e) {
+    toast('移行エラー: ' + e.message, 'err');
+  }
+}
+
+/* delete */
+document.getElementById('del-cancel').addEventListener('click', () => {
+  document.getElementById('del-modal').classList.remove('open');
+});
+document.getElementById('del-confirm').addEventListener('click', async () => {
+  try {
+    let all = await dbGetAll();
+    const writeBase = structuredClone(all);
+    await saveArchiveBackup(all, '記録削除前');
+    all = all.filter(c => c.id !== S.detailId);
+    await dbPutAll(all, writeBase);
+    document.getElementById('del-modal').classList.remove('open');
+    toast('削除しました', 'ok');
+    S.detailId = null;
+    await renderCol();
+    await renderWish();
+    history.back();
+  } catch(e) {
+    toast('削除エラー: ' + e.message, 'err');
+    document.getElementById('del-modal').classList.remove('open');
+  }
+});
+document.getElementById('del-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 15: FABs
+═══════════════════════════════════════════════════════════ */
+document.getElementById('fab-col').addEventListener('click', () => openFormNew('coat'));
+document.getElementById('fab-wish').addEventListener('click', () => openFormNew('wish'));
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 16: SETTINGS
+═══════════════════════════════════════════════════════════ */
+async function calcStorage() {
+  try{
+    const all=await dbGetAll(),snapshots=await archiveBackups();
+    const bytes=jsonSize(all),backupBytes=snapshots.reduce((n,s)=>n+s.sizeBytes,0);
+    const photos=all.reduce((n,c)=>n+(c.photos?.length||0)+(c.dispPhotos?.length||0),0);
+    document.getElementById('storage-info').textContent=`現在の記録 約${formatMB(bytes)}（${all.length}件・写真${photos}枚）／バックアップ 約${formatMB(backupBytes)}（${snapshots.length}件）／合計 約${formatMB(bytes+backupBytes)}。ファイル換算の目安です。`;
+  }catch(e){document.getElementById('storage-info').textContent='使用量を取得できませんでした：'+e.message;}
+}
+document.getElementById('s-calc').addEventListener('click', calcStorage);
+
+document.getElementById('s-export').addEventListener('click', async () => {
+  try {
+    const data = await dbGetAll();
+    if (data.length === 0) { toast('エクスポートするデータがありません', 'info'); return; }
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `coat-archive-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    toast('エクスポートしました ✓', 'ok');
+  } catch(e) {
+    toast('エクスポートエラー: ' + e.message, 'err');
+  }
+});
+
+document.getElementById('s-import').addEventListener('click', () => {
+  document.getElementById('fi-import').click();
+});
+let importSession=null;
+let importBusy=false;
+function describeImportValue(value,key) {
+  if (key==='photos' || key==='dispPhotos') return `${value?.length || 0}枚`;
+  if (value === undefined) return '（項目なし）';
+  return JSON.stringify(value,null,2);
+}
+async function openImportPreview(incoming,name,mode='add') {
+  validateArchive(incoming);
+  await validateImageData(incoming);
+  importSession={incoming:structuredClone(incoming),before:await dbGetAll(),name};
+  document.getElementById('import-file').textContent=name;
+  document.getElementById('import-mode').value=mode;
+  renderImportPreview();
+  document.getElementById('import-modal').classList.add('open');
+  document.getElementById('import-mode').focus();
+}
+document.getElementById('fi-import').addEventListener('change',async function() {
+  const file=this.files?.[0];this.value='';if (!file || importBusy) return;
+  importBusy=true;
+  try {
+    if (!/\.json$/i.test(file.name)) throw new Error('JSONファイルを選んでください');
+    if (file.size > IMPORT_MAX_BYTES) throw new Error('ファイルが128MiBを超えています。取り込みを中止します');
+    toast('JSONと写真を検証しています…','info');
+    let incoming;try { incoming=JSON.parse(await file.text()); } catch { throw new Error('JSONの解析に失敗しました'); }
+    await openImportPreview(incoming,file.name);
+  } catch(e) { toast('インポートエラー: '+e.message,'err'); }
+  finally { importBusy=false; }
+});
+document.getElementById('import-mode').addEventListener('change',renderImportPreview);
+document.getElementById('import-agree').addEventListener('change',function() {
+  document.getElementById('import-apply').disabled=importBusy || !this.checked || !!importSession?.plan.errors.length;
+});
+document.getElementById('import-cancel').addEventListener('click',() => {
+  if (importBusy) return;
+  document.getElementById('import-modal').classList.remove('open');importSession=null;
+});
+document.getElementById('import-backup-download').addEventListener('click',async () => {
+  try { downloadArchive(await dbGetAll(),'coat-archive-backup');toast('バックアップJSONを書き出しました','ok'); } catch(e) { toast(e.message,'err'); }
+});
+document.getElementById('import-apply').addEventListener('click',async () => {
+  if (importBusy || !importSession || !document.getElementById('import-agree').checked || importSession.plan.errors.length) return;
+  if (importSession.mode==='restore' && !confirm('完全復元を実行します。現在の全件を選択したJSONの状態へ置き換えます。続けますか？')) return;
+  importBusy=true;
+  for (const id of ['import-apply','import-mode','import-cancel','import-agree']) document.getElementById(id).disabled=true;
+  try {
+    const session=importSession, current=await dbGetAll();
+    if (!sameRecords(current,session.before)) throw new Error('確認後にデータが変更されました。取り込みをやり直してください');
+    const plan=planArchiveImport(current,session.incoming,session.mode);
+    if (plan.errors.length) throw new Error(plan.errors.join('\n'));
+    if (!sameRecords(current,plan.next)) {
+      await saveArchiveBackup(current,`JSON ${session.mode}: ${session.name}`);
+      await dbPutAll(plan.next,current);
+    }
+    document.getElementById('import-modal').classList.remove('open');importSession=null;
+    await renderCol();await renderWish();await calcStorage();
+    toast(`取り込みました：追加${plan.added}件・更新${plan.changed}件${plan.deleted.length?'・削除'+plan.deleted.length+'件':''}。全${plan.after.records}件です`,'ok');
+  } catch(e) {
+    document.getElementById('import-status').textContent='変更を中止しました: '+e.message;
+    toast(e.message,'err');
+  } finally {
+    importBusy=false;
+    for (const id of ['import-mode','import-cancel','import-agree']) document.getElementById(id).disabled=false;
+    document.getElementById('import-agree').checked=false;
+    document.getElementById('import-apply').disabled=true;
+  }
+});
+document.getElementById('s-backups').addEventListener('click',()=>openBackupHistory().catch(e=>toast(e.message,'err')));
+document.getElementById('s-clear').addEventListener('click',async () => {
+  if (!confirm('全データを削除します。削除前の状態を端末内バックアップへ保存します。続けますか？')) return;
+  try {
+    const current=await dbGetAll();await saveArchiveBackup(current,'全データ削除前');await dbPutAll([],current);
+    await renderCol();await renderWish();await calcStorage();toast('削除しました。バックアップ履歴から復元できます','ok');
+  } catch(e) { toast('削除エラー: '+e.message,'err'); }
+});
+
+
+function recordName(item) { return [item.maker,item.type,item.color].filter(Boolean).join(' / ')||'名称未設定のコート'; }
+function recordMatchesQuery(item,query) {
+  const text=[...ARCHIVE_TEXT_KEYS.map(key=>item[key]),...(item.textures||[]),item.price,item.rating]
+    .filter(value=>typeof value==='string'||typeof value==='number').join(' ').normalize('NFKC').toLowerCase();
+  return String(query).normalize('NFKC').toLowerCase().trim().split(/\s+/).every(term=>text.includes(term));
+}
+function jsonSize(value){return new TextEncoder().encode(JSON.stringify(value)).length;}
+function formatMB(bytes){return(bytes/1024/1024).toFixed(2)+' MB';}
+async function deleteArchiveBackups(ids){
+  const db=await backupDB();
+  try{await new Promise((resolve,reject)=>{
+    const tx=db.transaction('snapshots','readwrite');
+    for(const id of ids)tx.objectStore('snapshots').delete(id);
+    tx.oncomplete=resolve;tx.onerror=tx.onabort=()=>reject(new Error('バックアップ履歴を削除できませんでした'));
+  });}finally{db.close();}
+}
+async function openBackupHistory(){
+  const snapshots=await archiveBackups(),rows=document.getElementById('backup-rows');rows.replaceChildren();
+  document.getElementById('backup-summary').textContent=`${snapshots.length}件・約${formatMB(snapshots.reduce((n,s)=>n+s.sizeBytes,0))}。履歴を削除しても現在のコレクションは残ります。`;
+  for(const snapshot of snapshots){
+    const row=document.createElement('div');row.className='backup-row';
+    const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.value=snapshot.id;check.className='backup-select';
+    label.append(check,document.createTextNode(`${new Date(snapshot.at).toLocaleString('ja-JP')}・${snapshot.recordCount}件・約${formatMB(snapshot.sizeBytes)}`));
+    const reason=document.createElement('p');reason.textContent=snapshot.reason;reason.className='backup-reason';
+    const actions=document.createElement('div');actions.className='utility-row';
+    const restore=document.createElement('button');restore.className='s-btn';restore.textContent='この状態に戻す';
+    restore.addEventListener('click',async()=>{try{
+      const full=await loadArchiveBackup(snapshot.id);await openImportPreview(full.items,'保存した状態から復元','restore');
+      document.getElementById('backup-modal').classList.remove('open');
+    }catch(e){toast(e.message,'err');}});
+    const save=document.createElement('button');save.className='s-btn';save.textContent='ファイルに保存';
+    save.addEventListener('click',async()=>{try{downloadArchive((await loadArchiveBackup(snapshot.id)).items,'coat-archive-backup');}catch(e){toast(e.message,'err');}});
+    actions.append(restore,save);row.append(label,reason,actions);rows.append(row);
+  }
+  if(!snapshots.length)rows.textContent='バックアップ履歴はまだありません。';
+  document.getElementById('backup-modal').classList.add('open');
+}
+document.getElementById('backup-close').addEventListener('click',()=>document.getElementById('backup-modal').classList.remove('open'));
+document.getElementById('backup-delete').addEventListener('click',async()=>{
+  const ids=Array.from(document.querySelectorAll('.backup-select:checked')).map(el=>el.value);
+  if(!ids.length){toast('削除する履歴を選んでください','info');return;}
+  if(!confirm(`選択した${ids.length}件のバックアップ履歴を削除します。この履歴は元に戻せません。現在のコレクションは削除しません。続けますか？`))return;
+  const button=document.getElementById('backup-delete');button.disabled=true;
+  try{await deleteArchiveBackups(ids);await openBackupHistory();await calcStorage();toast('選択した履歴を削除しました','ok');}
+  catch(e){toast(e.message,'err');}finally{button.disabled=false;}
+});
+async function browseRecord(direction){
+  const existing=new Set((await dbGetAll()).map(x=>x.id));browseIds=browseIds.filter(id=>existing.has(id));
+  const index=browseIds.indexOf(S.detailId),target=browseIds[index+direction];
+  if(index>=0&&target)await openDetail(target,{replace:true});
+}
+function renderBrowseControls(){
+  const index=browseIds.indexOf(S.detailId);
+  return `<div class="browse-row"><button class="s-btn" id="browse-prev"${index<=0?' disabled':''}>‹ 前の一着</button><span>${index>=0?`${index+1} / ${browseIds.length}`:'コレクション'}</span><button class="s-btn" id="browse-next"${index<0||index>=browseIds.length-1?' disabled':''}>次の一着 ›</button></div>`;
+}
+const FIELD_LABELS={maker:'ブランド',type:'種類',style:'形・スタイル',color:'色',size:'サイズ',outerMat:'表地',innerMat:'裏地',date:'入手日',price:'価格',rating:'評価',textures:'触感',feelNote:'所感',memo:'記録',photos:'コート写真',dispPhotos:'手放し時写真',itemType:'登録先',disposed:'収蔵状態',locationName:'入手場所',mapUrl:'地図',acqMethod:'入手方法',acqScene:'発見時の状況',trashType:'廃棄の状態',companions:'一緒にあったもの',lifeTrace:'生活の気配',acqReason:'入手理由',dispDate:'手放し日',dispMethod:'手放し方法',dispNote:'手放し場所',releaseReason:'手放し理由',releaseScene:'手放し場面',lastNote:'最後の所感',recollection:'後から思い出すこと',remainingImpression:'今も残る印象',comparisonNote:'比較・参照メモ',createdAt:'登録日時',updatedAt:'更新日時',manualOrder:'並び順',id:'記録の識別情報'};
+function friendlyValue(value,key){
+  if(value==null||value===''||(Array.isArray(value)&&!value.length))return'未記入';
+  if(key==='disposed')return value?'手放し済み':'収蔵中';
+  if(key==='itemType')return value==='wish'?'ほしいコート':'コレクション';
+  if(key==='createdAt'||key==='updatedAt'){const date=new Date(value);return Number.isNaN(date.getTime())?'日時不明':date.toLocaleString('ja-JP');}
+  if(key==='price')return Number.isFinite(Number(value))?'¥'+Number(value).toLocaleString('ja-JP'):String(value);
+  if(key==='rating')return value?'★'.repeat(value):'未評価';
+  if(typeof value==='boolean')return value?'はい':'いいえ';
+  if(Array.isArray(value))return value.map(x=>friendlyValue(x,'')).join('、');
+  if(typeof value==='object')return Object.values(value).map(x=>friendlyValue(x,'')).join(' / ');
+  return String(value);
+}
+function importPhotoPreview(values){
+  const wrap=document.createElement('div');wrap.className='import-photos';
+  for(const src of (values||[]).slice(0,5)){const img=document.createElement('img');img.src=safeImage(src);img.alt='取り込む記録の写真';img.loading='lazy';wrap.append(img);}
+  const label=document.createElement('span');label.textContent=`${values?.length||0}枚`;wrap.append(label);return wrap;
+}
+function friendlyImportMessage(message,plan){
+  let text=String(message);
+  for(const row of plan.rows)text=text.split(row.id).join(recordName(row.proposed));
+  for(const[key,label]of Object.entries(FIELD_LABELS))text=text.split(key).join(label);
+  return text;
+}
+function renderImportPreview(){
+  if(!importSession)return;
+  const mode=document.getElementById('import-mode').value;
+  const plan=planArchiveImport(importSession.before,importSession.incoming,mode);importSession.plan=plan;importSession.mode=mode;
+  document.getElementById('import-summary').textContent=`新しく追加 ${plan.added}件 ／ 更新 ${plan.changed}件 ／ 変更しない ${plan.unchanged+plan.skipped}件${plan.deleted.length?` ／ 削除 ${plan.deleted.length}件`:''}。取り込み後は全${plan.after.records}件・写真${plan.after.photos+plan.after.dispPhotos}枚です。`;
+  document.getElementById('import-errors').textContent=[...plan.errors,...plan.warnings].map(s=>friendlyImportMessage(s,plan)).concat(mode==='restore'?['全件復元では現在の記録をファイルの状態に戻します。ファイルにない記録は削除されます。']:[]).join('\n');
+  const diffs=document.getElementById('import-diffs');diffs.replaceChildren();
+  for(const row of plan.rows){
+    if(row.action==='スキップ'||row.action==='変更なし')continue;
+    const card=document.createElement('details');card.className='import-record';card.open=plan.added+plan.changed<=3;
+    const summary=document.createElement('summary');summary.textContent=`${row.action}：${recordName(row.proposed)}${row.isOlder?'（以前の日時の記録）':''}`;card.append(summary);
+    card.append(importPhotoPreview(row.proposed.photos||row.proposed.dispPhotos));
+    for(const key of row.fields){
+      if(['id','manualOrder','createdAt','updatedAt'].includes(key))continue;
+      const field=document.createElement('div');field.className='import-field';
+      const title=document.createElement('strong');title.textContent=FIELD_LABELS[key]||'追加情報';field.append(title);
+      if(key==='photos'||key==='dispPhotos'){
+        const old=document.createElement('p');old.textContent=`${row.old?.[key]?.length||0}枚 → ${row.proposed[key]?.length||0}枚`;field.append(old,importPhotoPreview(row.proposed[key]));
+      }else{
+        if(row.old){const old=document.createElement('div');old.className='import-old';old.textContent='変更前：'+friendlyValue(row.old[key],key);field.append(old);}
+        const value=document.createElement('div');value.textContent=(row.old?'変更後：':'')+friendlyValue(row.proposed[key],key);field.append(value);
+      }
+      card.append(field);
+    }
+    diffs.append(card);
+  }
+  for(const item of plan.deleted){const card=document.createElement('div');card.className='import-record';const text=document.createElement('strong');text.textContent='削除：'+recordName(item);card.append(text,importPhotoPreview(item.photos));diffs.append(card);}
+  if(!plan.added&&!plan.changed&&!plan.deleted.length)diffs.textContent='今回、変更する記録はありません。';
+  document.getElementById('import-agree').checked=false;
+  document.getElementById('import-status').textContent='取り込み前の状態を自動保存します。空欄は既存の値を維持し、写真は追加します（全件復元を除く）。';
+  document.getElementById('import-apply').disabled=true;
+}
+
+let lightboxPhotos=[],lightboxIndex=0,lightboxZoom=1,lightboxX=0,lightboxY=0,lightboxPointers=new Map(),lightboxGesture=null,lightboxOverflow='';
+function dismissPhotoLightbox(){
+  const box=document.getElementById('photo-lightbox');if(!box.classList.contains('open'))return;
+  box.classList.remove('open');box.setAttribute('aria-hidden','true');document.body.style.overflow=lightboxOverflow;
+  lightboxPointers.clear();lightboxGesture=null;
+  document.querySelector('.detail-hero')?.focus({preventScroll:true});
+}
+function closePhotoLightbox(){if(history.state?.photoDialog)history.back();else dismissPhotoLightbox();}
+function lightboxTransform(){
+  const stage=document.getElementById('lightbox-stage');
+  const maxX=stage.clientWidth*(lightboxZoom-1)/2,maxY=stage.clientHeight*(lightboxZoom-1)/2;
+  lightboxX=Math.max(-maxX,Math.min(maxX,lightboxX));lightboxY=Math.max(-maxY,Math.min(maxY,lightboxY));
+  document.getElementById('lightbox-image').style.transform=`translate3d(${lightboxX}px,${lightboxY}px,0) scale(${lightboxZoom})`;
+  document.getElementById('lightbox-zoom-label').textContent=Math.round(lightboxZoom*100)+'%';
+  document.getElementById('lightbox-minus').disabled=lightboxZoom<=1;
+  document.getElementById('lightbox-plus').disabled=lightboxZoom>=5;
+}
+function setLightboxZoom(value){lightboxZoom=Math.max(1,Math.min(5,value));if(lightboxZoom===1)lightboxX=lightboxY=0;lightboxTransform();}
+function showLightboxPhoto(index){
+  if(index<0||index>=lightboxPhotos.length)return;
+  lightboxIndex=index;lightboxZoom=1;lightboxX=lightboxY=0;lightboxTransform();
+  const img=document.getElementById('lightbox-image');img.src=safeImage(lightboxPhotos[index]);img.alt=`写真 ${index+1}`;
+  document.getElementById('lightbox-count').textContent=`${index+1} / ${lightboxPhotos.length}`;
+  document.getElementById('lightbox-prev').disabled=index===0;
+  document.getElementById('lightbox-next').disabled=index===lightboxPhotos.length-1;
+  if(detailPhotoViewer)detailPhotoViewer(index,true);
+}
+function openPhotoLightbox(photos,index){
+  if(!photos.length)return;
+  lightboxPhotos=photos;lightboxOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
+  const box=document.getElementById('photo-lightbox');box.classList.add('open');box.setAttribute('aria-hidden','false');
+  showLightboxPhoto(index);document.getElementById('lightbox-close').focus();
+  history.pushState({...history.state,photoDialog:true,seq:++navSeq},'');
+}
+document.getElementById('lightbox-close').addEventListener('click',closePhotoLightbox);
+document.getElementById('lightbox-prev').addEventListener('click',()=>showLightboxPhoto(lightboxIndex-1));
+document.getElementById('lightbox-next').addEventListener('click',()=>showLightboxPhoto(lightboxIndex+1));
+document.getElementById('lightbox-plus').addEventListener('click',()=>setLightboxZoom(lightboxZoom+.5));
+document.getElementById('lightbox-minus').addEventListener('click',()=>setLightboxZoom(lightboxZoom-.5));
+document.getElementById('lightbox-reset').addEventListener('click',()=>setLightboxZoom(1));
+const lightboxStage=document.getElementById('lightbox-stage');
+lightboxStage.addEventListener('dblclick',event=>{event.preventDefault();setLightboxZoom(lightboxZoom>1?1:2);});
+lightboxStage.addEventListener('pointerdown',event=>{
+  if(event.button!==0)return;
+  lightboxStage.setPointerCapture(event.pointerId);lightboxPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(lightboxPointers.size===2){const[a,b]=Array.from(lightboxPointers.values());lightboxGesture={pinch:true,distance:Math.hypot(a.x-b.x,a.y-b.y),zoom:lightboxZoom};}
+  else if(lightboxPointers.size===1)lightboxGesture={x:event.clientX,y:event.clientY,panX:lightboxX,panY:lightboxY,multiple:false};
+});
+lightboxStage.addEventListener('pointermove',event=>{
+  if(!lightboxPointers.has(event.pointerId)||!lightboxGesture)return;
+  lightboxPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(lightboxPointers.size===2&&lightboxGesture.pinch){
+    const[a,b]=Array.from(lightboxPointers.values());const ratio=Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,lightboxGesture.distance);setLightboxZoom(lightboxGesture.zoom*ratio);
+  }else if(lightboxPointers.size===1&&!lightboxGesture.pinch&&lightboxZoom>1){
+    lightboxX=lightboxGesture.panX+event.clientX-lightboxGesture.x;lightboxY=lightboxGesture.panY+event.clientY-lightboxGesture.y;lightboxTransform();
+  }
+});
+function endLightboxPointer(event){
+  if(!lightboxPointers.has(event.pointerId))return;
+  const gesture=lightboxGesture;lightboxPointers.delete(event.pointerId);
+  if(event.type==='pointerup'&&!lightboxPointers.size&&gesture&&!gesture.pinch&&!gesture.multiple&&lightboxZoom===1){
+    const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.4)showLightboxPhoto(lightboxIndex+(dx<0?1:-1));
+  }
+  if(lightboxPointers.size===1){const point=Array.from(lightboxPointers.values())[0];lightboxGesture={x:point.x,y:point.y,panX:lightboxX,panY:lightboxY,multiple:true};}
+  else lightboxGesture=null;
+}
+lightboxStage.addEventListener('pointerup',endLightboxPointer);
+lightboxStage.addEventListener('pointercancel',endLightboxPointer);
+window.addEventListener('resize',()=>{if(document.getElementById('photo-lightbox').classList.contains('open'))lightboxTransform();});
+window.addEventListener('keydown',event=>{
+  const box=document.getElementById('photo-lightbox');
+  if(!box.classList.contains('open'))return;
+  if(event.key==='Escape'){event.preventDefault();closePhotoLightbox();}
+  if(event.key==='ArrowLeft'){event.preventDefault();showLightboxPhoto(lightboxIndex-1);}
+  if(event.key==='ArrowRight'){event.preventDefault();showLightboxPhoto(lightboxIndex+1);}
+  if(event.key==='Tab'){
+    const buttons=Array.from(box.querySelectorAll('button:not(:disabled)'));const first=buttons[0],last=buttons[buttons.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 17: INIT
+═══════════════════════════════════════════════════════════ */
+(async () => {
+  try {
+    /* IndexedDB が使えるか確認 */
+    await dbOpen();
+  } catch(e) {
+    toast('⚠ IndexedDB が使えません: ' + e.message + '（シークレットモードでは保存できません）', 'err');
+    console.error('IDB init error', e);
+  }
+
+  try {
+    await migrateLS();
+  } catch(e) {
+    console.warn('migration failed', e);
+  }
+
+  try {
+    await renderCol();
+    await renderWish();
+  } catch(e) {
+    toast('初期化エラー: ' + e.message, 'err');
+    console.error('init render error', e);
+  }
+})();
+</script>
+</body>
+</html>
